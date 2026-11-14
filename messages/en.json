@@ -1,0 +1,288 @@
+{
+  "Common": {
+    "appName": "Cosa Nostra",
+    "tagline": "Whispers. Lies. Survival.",
+    "you": "You",
+    "cancel": "Cancel",
+    "close": "Close",
+    "continue": "Continue",
+    "back": "Back",
+    "search": "Search",
+    "language": "Language",
+    "alive": "{count} alive",
+    "dead": "Dead",
+    "host": "Host",
+    "ready": "Ready",
+    "night": "night",
+    "day": "day"
+  },
+  "Join": {
+    "title": "Cosa Nostra",
+    "subtitle": "A game of whispers, lies, and survival. One phone each. Twelve seats at the table.",
+    "roomCode": "Room code",
+    "name": "Your name",
+    "namePlaceholder": "e.g. Alessia",
+    "join": "Take a seat",
+    "hint": "Mock mode — no account, no server. Everything lives on this phone.",
+    "nameRequired": "Enter a name to join.",
+    "mockRoom": "Mock table"
+  },
+  "Lobby": {
+    "room": "Room {code}",
+    "title": "Waiting for the table",
+    "subtitle": "The game starts when everyone is seated.",
+    "players": "{count} of {max} players",
+    "copy": "Copy code",
+    "copied": "Copied",
+    "start": "Start game",
+    "hint": "In the real game the host starts the round.",
+    "leave": "Leave table",
+    "joinFirst": "Take a seat first"
+  },
+  "Phase": {
+    "lobby": "Lobby",
+    "roleReveal": "Role reveal",
+    "night": "Night {round}",
+    "nightReport": "Dawn · Night {round}",
+    "dayDiscussion": "Day {round} · Discussion",
+    "voting": "Day {round} · Vote",
+    "voteResult": "Vote result",
+    "gameOver": "Game over"
+  },
+  "Role": {
+    "title": "Your role",
+    "hold": "Hold to reveal",
+    "holding": "Release to hide",
+    "hint": "Your role is secret. Reveal it only when nobody is looking.",
+    "faction": "Faction",
+    "ability": "Ability",
+    "win": "Win condition",
+    "nightAbility": "Night ability",
+    "dayAbility": "Day ability",
+    "passive": "Passive role",
+    "seen": "I know my role",
+    "confirmHint": "Hold the eye button in the top bar any time to check your card.",
+    "peek": "Peek at role",
+    "youAre": "You are the {role}",
+    "crew": "Mafia crew",
+    "crewHint": "Only the Mafia can see this."
+  },
+  "Faction": {
+    "mafia": "Mafia",
+    "town": "Town",
+    "neutral": "Neutral"
+  },
+  "Roles": {
+    "godfather": {
+      "name": "Godfather",
+      "short": "Leads the Mafia and orders the kill.",
+      "ability": "Each night, choose one player for the Mafia to eliminate.",
+      "win": "Mafia wins when no Town members remain, or nothing can stop them."
+    },
+    "framer": {
+      "name": "Framer",
+      "short": "Makes an innocent look guilty.",
+      "ability": "Each night, frame one player. Investigations show them as Mafia.",
+      "win": "Mafia wins when no Town members remain, or nothing can stop them."
+    },
+    "detective": {
+      "name": "Detective",
+      "short": "Finds the Mafia, one clue at a time.",
+      "ability": "Each night, investigate one player and learn their faction.",
+      "win": "Town wins when every Mafia member is eliminated."
+    },
+    "doctor": {
+      "name": "Doctor",
+      "short": "Keeps the Town breathing.",
+      "ability": "Each night, protect one player from death.",
+      "win": "Town wins when every Mafia member is eliminated."
+    },
+    "villager": {
+      "name": "Villager",
+      "short": "No powers. Only your voice and your vote.",
+      "ability": "No night action. Find the Mafia through discussion and voting.",
+      "win": "Town wins when every Mafia member is eliminated."
+    },
+    "jester": {
+      "name": "Jester",
+      "short": "Wants to be voted out — and win alone.",
+      "ability": "No night action. If the table votes you out, you win immediately.",
+      "win": "Get eliminated by a day vote."
+    }
+  },
+  "Action": {
+    "title": "Action",
+    "nightTitle": "Night action",
+    "dayTitle": "Day action",
+    "nightIntro": "The table is asleep. Choose carefully — nobody will see this.",
+    "dayIntro": "Use your ability before the vote. Everyone may notice.",
+    "chooseTarget": "Choose a player",
+    "selected": "Selected: {name}",
+    "confirm": "Confirm action",
+    "submitted": "Action submitted",
+    "noAction": "No {phase} action",
+    "noActionBody": "Your role has no ability at this time. Stay quiet and watch.",
+    "passiveBody": "You have no active ability. Your power is your voice and your vote.",
+    "remaining": "One action per {phase}.",
+    "open": "Open action",
+    "close": "Close action",
+    "unavailable": "No action available right now."
+  },
+  "NightReport": {
+    "title": "What happened tonight",
+    "subtitle": "Only you can see this report.",
+    "beginDay": "Begin day",
+    "startingIn": "Starting day in {seconds, plural, =1 {1 second} other {# seconds}}",
+    "quiet": "A quiet night. Nothing happened to you."
+  },
+  "Day": {
+    "title": "Discuss",
+    "subtitle": "Accuse, defend, whisper. When the table is ready, call the vote.",
+    "timer": "Discussion timer",
+    "alive": "{count} alive",
+    "startVote": "Call vote",
+    "whisperCta": "Send a whisper",
+    "whisperHint": "Private words before the vote.",
+    "aliveList": "At the table",
+    "deadNote": "{name} is dead."
+  },
+  "Vote": {
+    "title": "Cast your vote",
+    "subtitle": "Choose who to eliminate. The table is watching.",
+    "hint": "The player with the most votes leaves the table.",
+    "confirm": "Lock in vote",
+    "confirmTarget": "Vote for {name}",
+    "locked": "Vote locked",
+    "resultTitle": "Vote result",
+    "tally": "{count, plural, =1 {1 vote} other {# votes}}",
+    "eliminated": "{name} was eliminated.",
+    "wasRole": "They were the {role} ({faction}).",
+    "noElimination": "No one was eliminated.",
+    "tie": "The vote was tied. Nobody leaves the table.",
+    "continue": "Continue",
+    "finish": "See final reveal",
+    "yourVote": "Your vote",
+    "aliveCount": "{count} players voted."
+  },
+  "GameOver": {
+    "title": "Game over",
+    "winner": "{faction} wins",
+    "subtitle": "The table is revealed. Every secret is out.",
+    "reveal": "Final roles",
+    "again": "Play again",
+    "mockNote": "Mock end screen. A real game would continue until a faction wins."
+  },
+  "Whispers": {
+    "title": "Whispers",
+    "subtitle": "Private words. Choose them carefully.",
+    "remaining": "{count, plural, =0 {No whispers left today} =1 {1 whisper left today} other {# whispers left today}}",
+    "empty": "No whispers yet. Start one with a player at the table.",
+    "new": "New whisper",
+    "newTitle": "Whisper someone",
+    "newHint": "Pick a player. Only the two of you will see it.",
+    "send": "Send",
+    "placeholder": "Write a whisper…",
+    "limitReached": "You have used all whispers for today.",
+    "thread": "Whisper with {name}",
+    "fromYou": "You",
+    "sentNotice": "Sent privately",
+    "noPlayers": "No players available.",
+    "startChat": "Start a whisper",
+    "youPrefix": "You: {text}",
+    "themPrefix": "{name}: {text}",
+    "seed": {
+      "sofia1": "Did you see how quiet Marco went after the vote?",
+      "lucia1": "If I'm gone tomorrow, look at Sofia.",
+      "lucia2": "Deal. I'll keep my vote ready.",
+      "enzo1": "Doctor here. I can't protect you every night."
+    }
+  },
+  "Codex": {
+    "title": "Codex",
+    "subtitle": "Roles, factions, and the rules of the table.",
+    "search": "Search the codex…",
+    "roles": "Roles",
+    "factions": "Factions",
+    "rules": "Rules",
+    "glossary": "Glossary",
+    "noResults": "Nothing matches “{query}”.",
+    "inPlay": "{count} in play",
+    "abilityLabel": "Ability",
+    "winLabel": "Win condition",
+    "factionInfo": {
+      "mafia": {
+        "title": "Mafia",
+        "body": "The hidden killers. Each night they choose a victim, and each day they blend into the table."
+      },
+      "town": {
+        "title": "Town",
+        "body": "The uninformed majority. They have the numbers, but must find the Mafia before it is too late."
+      },
+      "neutral": {
+        "title": "Neutral",
+        "body": "Nobody's ally. Neutrals play for their own win condition, not for Mafia or Town."
+      }
+    },
+    "factionInPlay": "{count} at the table"
+  },
+  "Rules": {
+    "secret": { "title": "Your role is secret", "body": "Hold the eye button to peek at your card. Let go and it hides again." },
+    "night": { "title": "Night", "body": "Players with night abilities act in private. The table waits for dawn." },
+    "day": { "title": "Day", "body": "Discuss openly. Whispers are private. When discussion ends, the table votes." },
+    "vote": { "title": "Vote", "body": "The player with the most votes is eliminated and their role is revealed." },
+    "whisper": { "title": "Whispers", "body": "You can send a limited number of private one-to-one messages each day." },
+    "report": { "title": "Night report", "body": "After every night you receive a private report of what happened to you and the table." },
+    "win": { "title": "Winning", "body": "The game ends when a faction completes its win condition." }
+  },
+  "Glossary": {
+    "action": { "term": "Action", "def": "An ability used during the night or day." },
+    "faction": { "term": "Faction", "def": "The side you win with: Mafia, Town, or Neutral." },
+    "frame": { "term": "Frame", "def": "Make an innocent player appear as Mafia to investigations." },
+    "majority": { "term": "Majority", "def": "More than half of the living players." },
+    "roleblock": { "term": "Roleblock", "def": "Prevent a player's ability from working that phase." },
+    "whisper": { "term": "Whisper", "def": "A private message between two players." }
+  },
+  "Alerts": {
+    "title": "Alerts",
+    "subtitle": "Night reports and personal events.",
+    "empty": "Nothing has happened yet.",
+    "markRead": "Mark all read",
+    "unread": "{count} new",
+    "earlier": "Earlier",
+    "tonight": "Latest",
+    "seed": {
+      "killedTitle": "Lucia was found dead",
+      "killedBody": "Lucia (Villager) was killed by the Mafia.",
+      "blockedTitle": "You were roleblocked",
+      "blockedBody": "Your night action failed. Someone blocked you.",
+      "investigatedTitle": "Framing result",
+      "investigatedBody": "Your target will appear as Mafia to investigations.",
+      "nightTitle": "Night 1 began",
+      "nightBody": "The table went quiet and night actions started.",
+      "voteTitle": "Vote result",
+      "voteBody": "Lucia was eliminated. She was the Villager."
+    }
+  },
+  "Nav": {
+    "table": "Table",
+    "whispers": "Whispers",
+    "alerts": "Alerts",
+    "codex": "Codex",
+    "admin": "Admin"
+  },
+  "Admin": {
+    "title": "Host controls",
+    "subtitle": "Manage the flow of the table.",
+    "phase": "Current phase",
+    "skip": "Skip to next phase",
+    "skipHint": "Skips the current timer or step and moves the table forward.",
+    "unavailable": "No next step from this phase.",
+    "host": "Host",
+    "mockNote": "Host-only controls. In the real game these actions belong to the host."
+  },
+  "Locale": {
+    "switch": "Switch language",
+    "en": "EN",
+    "nl": "NL"
+  }
+}

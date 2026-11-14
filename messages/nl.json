@@ -1,0 +1,288 @@
+{
+  "Common": {
+    "appName": "Cosa Nostra",
+    "tagline": "Fluisters. Leugens. Overleven.",
+    "you": "Jij",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "continue": "Doorgaan",
+    "back": "Terug",
+    "search": "Zoeken",
+    "language": "Taal",
+    "alive": "{count} in leven",
+    "dead": "Dood",
+    "host": "Host",
+    "ready": "Klaar",
+    "night": "nacht",
+    "day": "dag"
+  },
+  "Join": {
+    "title": "Cosa Nostra",
+    "subtitle": "Een spel van fluisters, leugens en overleven. Iedereen een telefoon. Twaalf stoelen aan tafel.",
+    "roomCode": "Kamercode",
+    "name": "Je naam",
+    "namePlaceholder": "bijv. Alessia",
+    "join": "Neem plaats",
+    "hint": "Mockmodus — geen account, geen server. Alles blijft op deze telefoon.",
+    "nameRequired": "Vul een naam in om mee te doen.",
+    "mockRoom": "Mocktafel"
+  },
+  "Lobby": {
+    "room": "Kamer {code}",
+    "title": "Wachten op de tafel",
+    "subtitle": "Het spel begint zodra iedereen zit.",
+    "players": "{count} van {max} spelers",
+    "copy": "Kopieer code",
+    "copied": "Gekopieerd",
+    "start": "Start spel",
+    "hint": "In het echte spel start de host de ronde.",
+    "leave": "Tafel verlaten",
+    "joinFirst": "Neem eerst plaats"
+  },
+  "Phase": {
+    "lobby": "Lobby",
+    "roleReveal": "Rol onthullen",
+    "night": "Nacht {round}",
+    "nightReport": "Ochtend · Nacht {round}",
+    "dayDiscussion": "Dag {round} · Discussie",
+    "voting": "Dag {round} · Stemming",
+    "voteResult": "Stemuitslag",
+    "gameOver": "Spel voorbij"
+  },
+  "Role": {
+    "title": "Jouw rol",
+    "hold": "Houd ingedrukt om te onthullen",
+    "holding": "Laat los om te verbergen",
+    "hint": "Je rol is geheim. Onthul hem alleen als niemand meekijkt.",
+    "faction": "Factie",
+    "ability": "Vaardigheid",
+    "win": "Winvoorwaarde",
+    "nightAbility": "Nachtvaardigheid",
+    "dayAbility": "Dagvaardigheid",
+    "passive": "Passieve rol",
+    "seen": "Ik ken mijn rol",
+    "confirmHint": "Houd de oogknop bovenin ingedrukt om je kaart altijd te bekijken.",
+    "peek": "Gluren naar rol",
+    "youAre": "Jij bent de {role}",
+    "crew": "Maffiaploeg",
+    "crewHint": "Alleen de Maffia ziet dit."
+  },
+  "Faction": {
+    "mafia": "Maffia",
+    "town": "Stad",
+    "neutral": "Neutraal"
+  },
+  "Roles": {
+    "godfather": {
+      "name": "Peetvader",
+      "short": "Leidt de Maffia en geeft de moordopdracht.",
+      "ability": "Kies elke nacht één speler die de Maffia elimineert.",
+      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen."
+    },
+    "framer": {
+      "name": "Vervalser",
+      "short": "Laat een onschuldige schuldig lijken.",
+      "ability": "Vervals elke nacht één speler. Onderzoeken zien hen als Maffia.",
+      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen."
+    },
+    "detective": {
+      "name": "Rechercheur",
+      "short": "Vindt de Maffia, aanwijzing voor aanwijzing.",
+      "ability": "Onderzoek elke nacht één speler en leer hun factie.",
+      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+    },
+    "doctor": {
+      "name": "Dokter",
+      "short": "Houdt de Stad in leven.",
+      "ability": "Bescherm elke nacht één speler tegen de dood.",
+      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+    },
+    "villager": {
+      "name": "Burgeling",
+      "short": "Geen krachten. Alleen je stem en je woorden.",
+      "ability": "Geen nachtactie. Vind de Maffia via discussie en stemming.",
+      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+    },
+    "jester": {
+      "name": "Nar",
+      "short": "Wil weggestemd worden — en alleen winnen.",
+      "ability": "Geen nachtactie. Als de tafel je wegstemt, win je meteen.",
+      "win": "Word geëlimineerd door een dagstemming."
+    }
+  },
+  "Action": {
+    "title": "Actie",
+    "nightTitle": "Nachtactie",
+    "dayTitle": "Dagactie",
+    "nightIntro": "De tafel slaapt. Kies voorzichtig — niemand ziet dit.",
+    "dayIntro": "Gebruik je vaardigheid voor de stemming. Iedereen kan het merken.",
+    "chooseTarget": "Kies een speler",
+    "selected": "Gekozen: {name}",
+    "confirm": "Actie bevestigen",
+    "submitted": "Actie ingediend",
+    "noAction": "Geen {phase}actie",
+    "noActionBody": "Je rol heeft nu geen vaardigheid. Blijf stil en kijk toe.",
+    "passiveBody": "Je hebt geen actieve vaardigheid. Je kracht is je stem en je woorden.",
+    "remaining": "Eén actie per {phase}.",
+    "open": "Actie openen",
+    "close": "Actie sluiten",
+    "unavailable": "Nu geen actie beschikbaar."
+  },
+  "NightReport": {
+    "title": "Wat er vannacht gebeurde",
+    "subtitle": "Alleen jij ziet dit rapport.",
+    "beginDay": "Begin de dag",
+    "startingIn": "De dag begint over {seconds, plural, =1 {1 seconde} other {# seconden}}",
+    "quiet": "Een rustige nacht. Jou is niets overkomen."
+  },
+  "Day": {
+    "title": "Discussie",
+    "subtitle": "Beschuldig, verdedig, fluister. Roep de stemming als de tafel klaar is.",
+    "timer": "Discussietimer",
+    "alive": "{count} in leven",
+    "startVote": "Roep stemming",
+    "whisperCta": "Stuur een fluister",
+    "whisperHint": "Privéwoorden voor de stemming.",
+    "aliveList": "Aan tafel",
+    "deadNote": "{name} is dood."
+  },
+  "Vote": {
+    "title": "Breng je stem uit",
+    "subtitle": "Kies wie geëlimineerd wordt. De tafel kijkt mee.",
+    "hint": "De speler met de meeste stemmen verlaat de tafel.",
+    "confirm": "Stem vastleggen",
+    "confirmTarget": "Stem op {name}",
+    "locked": "Stem vastgelegd",
+    "resultTitle": "Stemuitslag",
+    "tally": "{count, plural, =1 {1 stem} other {# stemmen}}",
+    "eliminated": "{name} is geëlimineerd.",
+    "wasRole": "Diegene was de {role} ({faction}).",
+    "noElimination": "Niemand is geëlimineerd.",
+    "tie": "De stemming was gelijk. Niemand verlaat de tafel.",
+    "continue": "Doorgaan",
+    "finish": "Bekijk de eindonthulling",
+    "yourVote": "Jouw stem",
+    "aliveCount": "{count} spelers hebben gestemd."
+  },
+  "GameOver": {
+    "title": "Spel voorbij",
+    "winner": "{faction} wint",
+    "subtitle": "De tafel is onthuld. Elk geheim ligt op tafel.",
+    "reveal": "Eindrollen",
+    "again": "Opnieuw spelen",
+    "mockNote": "Mockeindscherm. Een echt spel gaat door tot een factie wint."
+  },
+  "Whispers": {
+    "title": "Fluisters",
+    "subtitle": "Privéwoorden. Kies ze zorgvuldig.",
+    "remaining": "{count, plural, =0 {Geen fluisters meer vandaag} =1 {1 fluister over vandaag} other {# fluisters over vandaag}}",
+    "empty": "Nog geen fluisters. Begin er een met een speler aan tafel.",
+    "new": "Nieuwe fluister",
+    "newTitle": "Fluister met iemand",
+    "newHint": "Kies een speler. Alleen jullie twee zien het.",
+    "send": "Verstuur",
+    "placeholder": "Schrijf een fluister…",
+    "limitReached": "Je hebt al je fluisters vandaag gebruikt.",
+    "thread": "Fluister met {name}",
+    "fromYou": "Jij",
+    "sentNotice": "Privé verstuurd",
+    "noPlayers": "Geen spelers beschikbaar.",
+    "startChat": "Begin een fluister",
+    "youPrefix": "Jij: {text}",
+    "themPrefix": "{name}: {text}",
+    "seed": {
+      "sofia1": "Zag je hoe stil Marco werd na de stemming?",
+      "lucia1": "Als ik er morgen niet meer ben, kijk naar Sofia.",
+      "lucia2": "Afgesproken. Ik houd mijn stem klaar.",
+      "enzo1": "Dokter hier. Ik kan je niet elke nacht beschermen."
+    }
+  },
+  "Codex": {
+    "title": "Codex",
+    "subtitle": "Rollen, facties en de regels van de tafel.",
+    "search": "Zoek in de codex…",
+    "roles": "Rollen",
+    "factions": "Facties",
+    "rules": "Regels",
+    "glossary": "Woordenlijst",
+    "noResults": "Niets gevonden voor “{query}”.",
+    "inPlay": "{count} in het spel",
+    "abilityLabel": "Vaardigheid",
+    "winLabel": "Winvoorwaarde",
+    "factionInfo": {
+      "mafia": {
+        "title": "Maffia",
+        "body": "De verborgen moordenaars. Elke nacht kiezen ze een slachtoffer, elke dag vallen ze niet op."
+      },
+      "town": {
+        "title": "Stad",
+        "body": "De onwetende meerderheid. Ze hebben de aantallen, maar moeten de Maffia vinden voor het te laat is."
+      },
+      "neutral": {
+        "title": "Neutraal",
+        "body": "Niemands bondgenoot. Neutralen spelen voor hun eigen winvoorwaarde, niet voor Maffia of Stad."
+      }
+    },
+    "factionInPlay": "{count} aan tafel"
+  },
+  "Rules": {
+    "secret": { "title": "Je rol is geheim", "body": "Houd de oogknop ingedrukt om je kaart te bekijken. Laat los en hij verdwijnt weer." },
+    "night": { "title": "Nacht", "body": "Spelers met nachtvaardigheden handelen in het geheim. De tafel wacht op de ochtend." },
+    "day": { "title": "Dag", "body": "Discussieer openlijk. Fluisters zijn privé. Als de discussie eindigt, stemt de tafel." },
+    "vote": { "title": "Stemming", "body": "De speler met de meeste stemmen wordt geëlimineerd en hun rol wordt onthuld." },
+    "whisper": { "title": "Fluisters", "body": "Je kunt elke dag een beperkt aantal privéberichten naar één speler sturen." },
+    "report": { "title": "Nachtrapport", "body": "Na elke nacht krijg je een privéverslag van wat jou en de tafel is overkomen." },
+    "win": { "title": "Winnen", "body": "Het spel eindigt zodra een factie haar winvoorwaarde vervult." }
+  },
+  "Glossary": {
+    "action": { "term": "Actie", "def": "Een vaardigheid die je in de nacht of overdag gebruikt." },
+    "faction": { "term": "Factie", "def": "De kant waarmee je wint: Maffia, Stad of Neutraal." },
+    "frame": { "term": "Vervalsen", "def": "Een onschuldige speler als Maffia laten lijken bij onderzoeken." },
+    "majority": { "term": "Meerderheid", "def": "Meer dan de helft van de levende spelers." },
+    "roleblock": { "term": "Blokkeren", "def": "Voorkomen dat de vaardigheid van een speler in die fase werkt." },
+    "whisper": { "term": "Fluister", "def": "Een privébericht tussen twee spelers." }
+  },
+  "Alerts": {
+    "title": "Meldingen",
+    "subtitle": "Nachtrapporten en persoonlijke gebeurtenissen.",
+    "empty": "Er is nog niets gebeurd.",
+    "markRead": "Alles gelezen",
+    "unread": "{count} nieuw",
+    "earlier": "Eerder",
+    "tonight": "Laatste",
+    "seed": {
+      "killedTitle": "Lucia is dood gevonden",
+      "killedBody": "Lucia (Burgeling) is vermoord door de Maffia.",
+      "blockedTitle": "Je bent geblokkeerd",
+      "blockedBody": "Je nachtactie mislukte. Iemand heeft je geblokkeerd.",
+      "investigatedTitle": "Vervalsingsresultaat",
+      "investigatedBody": "Je doelwit lijkt nu Maffia bij onderzoeken.",
+      "nightTitle": "Nacht 1 is begonnen",
+      "nightBody": "De tafel werd stil en de nachtacties begonnen.",
+      "voteTitle": "Stemuitslag",
+      "voteBody": "Lucia is geëlimineerd. Zij was de Burgeling."
+    }
+  },
+  "Nav": {
+    "table": "Tafel",
+    "whispers": "Fluisters",
+    "alerts": "Meldingen",
+    "codex": "Codex",
+    "admin": "Beheer"
+  },
+  "Admin": {
+    "title": "Hostbeheer",
+    "subtitle": "Beheer het verloop van de tafel.",
+    "phase": "Huidige fase",
+    "skip": "Ga naar volgende fase",
+    "skipHint": "Slaat de huidige timer of stap over en zet de tafel verder.",
+    "unavailable": "Geen volgende stap vanuit deze fase.",
+    "host": "Host",
+    "mockNote": "Alleen voor de host. In het echte spel horen deze acties bij de host."
+  },
+  "Locale": {
+    "switch": "Taal wisselen",
+    "en": "EN",
+    "nl": "NL"
+  }
+}
