@@ -17,11 +17,10 @@ export function RevealCard() {
       type="button"
       aria-label={t("hold")}
       aria-pressed={shown}
-      className="block w-full touch-none select-none rounded-2xl text-left outline-none [perspective:1200px] focus-visible:ring-2 focus-visible:ring-ring"
+      className="block w-full touch-pan-y select-none rounded-2xl text-left outline-none [perspective:1200px] focus-visible:ring-2 focus-visible:ring-ring"
       onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
-        event.preventDefault();
-        start();
+        start({ x: event.clientX, y: event.clientY });
       }}
       onKeyDown={(event) => {
         if (event.key === " " || event.key === "Enter") {

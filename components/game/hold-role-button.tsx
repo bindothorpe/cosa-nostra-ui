@@ -24,7 +24,7 @@ export function HoldRoleButton() {
         onContextMenu={(event) => event.preventDefault()}
         onPointerDown={(event) => {
           event.preventDefault();
-          start();
+          start({ x: event.clientX, y: event.clientY });
         }}
         onKeyDown={(event) => {
           if (event.key === " " || event.key === "Enter") {
