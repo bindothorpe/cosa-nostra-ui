@@ -38,7 +38,7 @@ export function RolePeekButton() {
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
-        <RoleCard player={you} />
+        <RoleCard player={you} displayBorder={false} />
       </DialogContent>
     </Dialog>
   );

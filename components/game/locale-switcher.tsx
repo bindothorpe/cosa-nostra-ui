@@ -33,7 +33,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
       aria-label={t("switch")}
       aria-busy={pending}
       className={cn(
-        "flex items-center gap-0.5 rounded-full border bg-card p-0.5",
+        "flex items-center gap-0.5 rounded-full border bg-card px-0.5 py-0",
         className,
       )}
     >
@@ -45,7 +45,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
           aria-pressed={locale === item}
           disabled={pending}
           className={cn(
-            "min-h-11 min-w-10 rounded-full text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-60",
+            "min-h-10 min-w-10 rounded-full text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-60",
             locale === item
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",

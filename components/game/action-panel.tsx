@@ -80,9 +80,7 @@ function RosterPlayer({
       ref={setNodeRef}
       type="button"
       style={{
-        transform: transform
-          ? CSS.Translate.toString(transform)
-          : undefined,
+        transform: transform ? CSS.Translate.toString(transform) : undefined,
       }}
       className={cn(
         "flex min-h-12 touch-none items-center gap-2 rounded-xl border bg-card p-2 text-left",
@@ -161,17 +159,17 @@ function SentenceSlot({
               : undefined,
           }}
           className={cn(
-            "inline-flex touch-none items-center gap-1.5 rounded-lg border bg-secondary px-2.5 py-1 text-sm font-medium",
+            "inline-flex touch-none items-center min-h-9 gap-1.5 rounded-lg border bg-secondary px-2.5 py-1 h-full text-sm font-medium w-full",
             isDragging && "opacity-40",
           )}
           {...listeners}
           {...attributes}
         >
-          {player.name}
+          <div className="flex truncate grow">{player.name}</div>
           <GripVertical className="size-3.5 text-muted-foreground" />
         </button>
       ) : (
-        <span className="inline-flex min-h-9 items-center rounded-lg border border-dashed px-2.5 text-xs text-muted-foreground">
+        <span className="inline-flex min-h-9 items-center rounded-lg border border-dashed px-2.5 text-xs w-full text-muted-foreground">
           {t("dropName")}
         </span>
       )}
@@ -289,9 +287,7 @@ export function ActionPanel() {
   function clearSlot(index: number) {
     if (dragHappened.current) return;
     setSlots((current) =>
-      current.map((value, slotIndex) =>
-        slotIndex === index ? null : value,
-      ),
+      current.map((value, slotIndex) => (slotIndex === index ? null : value)),
     );
   }
 
@@ -318,8 +314,7 @@ export function ActionPanel() {
                   const slotIndex = parts
                     .slice(0, index)
                     .filter(
-                      (item) =>
-                        item === "{first}" || item === "{second}",
+                      (item) => item === "{first}" || item === "{second}",
                     ).length;
                   const valid =
                     !activePlayer ||

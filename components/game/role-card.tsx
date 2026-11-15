@@ -16,9 +16,11 @@ import type { Player } from "./types";
 
 export function RoleCard({
   player,
+  displayBorder,
   className,
 }: {
   player: Player;
+  displayBorder?: boolean;
   className?: string;
 }) {
   const t = useTranslations("Role");
@@ -50,7 +52,13 @@ export function RoleCard({
   );
 
   return (
-    <div className={cn("rounded-2xl border bg-card p-5", className)}>
+    <div
+      className={cn(
+        "rounded-2xl bg-card",
+        className,
+        displayBorder ? "border p-5" : "",
+      )}
+    >
       <button
         type="button"
         aria-label={t("pressHint")}
