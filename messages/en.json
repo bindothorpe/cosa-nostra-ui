@@ -14,7 +14,8 @@
     "host": "Host",
     "ready": "Ready",
     "night": "night",
-    "day": "day"
+    "day": "day",
+    "timeLeft": "Time left: {time}"
   },
   "Join": {
     "title": "Cosa Nostra",
@@ -65,7 +66,11 @@
     "peek": "Peek at role",
     "youAre": "You are the {role}",
     "crew": "Mafia crew",
-    "crewHint": "Only the Mafia can see this."
+    "crewHint": "Only the Mafia can see this.",
+    "tap": "Tap to view role",
+    "tapHide": "Tap to hide role",
+    "pressHint": "Press and hold to reveal",
+    "tip": "Tip"
   },
   "Faction": {
     "mafia": "Mafia",
@@ -77,37 +82,43 @@
       "name": "Godfather",
       "short": "Leads the Mafia and orders the kill.",
       "ability": "Each night, choose one player for the Mafia to eliminate.",
-      "win": "Mafia wins when no Town members remain, or nothing can stop them."
+      "win": "Mafia wins when no Town members remain, or nothing can stop them.",
+      "tip": "Stay hidden behind your crew. Order kills that make the Town suspect each other, and never be the loudest voice."
     },
     "framer": {
       "name": "Framer",
       "short": "Makes an innocent look guilty.",
       "ability": "Each night, frame one player. Investigations show them as Mafia.",
-      "win": "Mafia wins when no Town members remain, or nothing can stop them."
+      "win": "Mafia wins when no Town members remain, or nothing can stop them.",
+      "tip": "Frame players who are likely to be investigated. A failed frame is worse than no frame."
     },
     "detective": {
       "name": "Detective",
       "short": "Finds the Mafia, one clue at a time.",
       "ability": "Each night, investigate one player and learn their faction.",
-      "win": "Town wins when every Mafia member is eliminated."
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Reveal results carefully. Once the Mafia know you are the Detective, you are the next target."
     },
     "doctor": {
       "name": "Doctor",
       "short": "Keeps the Town breathing.",
       "ability": "Each night, protect one player from death.",
-      "win": "Town wins when every Mafia member is eliminated."
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Protect the players who are shaping the discussion, not only yourself."
     },
     "villager": {
       "name": "Villager",
       "short": "No powers. Only your voice and your vote.",
       "ability": "No night action. Find the Mafia through discussion and voting.",
-      "win": "Town wins when every Mafia member is eliminated."
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Your only power is pressure. Track contradictions and force people to commit to reads."
     },
     "jester": {
       "name": "Jester",
       "short": "Wants to be voted out — and win alone.",
       "ability": "No night action. If the table votes you out, you win immediately.",
-      "win": "Get eliminated by a day vote."
+      "win": "Get eliminated by a day vote.",
+      "tip": "Act suspicious, but not so obviously that the table dismisses you as a joke."
     }
   },
   "Action": {
@@ -126,7 +137,19 @@
     "remaining": "One action per {phase}.",
     "open": "Open action",
     "close": "Close action",
-    "unavailable": "No action available right now."
+    "unavailable": "No action available right now.",
+    "sentences": {
+      "godfather": "Order {first} to kill {second}",
+      "framer": "Frame {first}, then {second}, so investigations show them as Mafia",
+      "detective": "Investigate {first} and learn their faction",
+      "doctor": "Protect {first} from death tonight",
+      "villager": "You have no action tonight",
+      "jester": "You have no action tonight"
+    },
+    "rosterTitle": "Players",
+    "dragHint": "Drag a player into a blank. Drag between blanks to reorder.",
+    "dropName": "Drop a name",
+    "slotAria": "Action slot {index}"
   },
   "NightReport": {
     "title": "What happened tonight",
@@ -188,6 +211,8 @@
     "sentNotice": "Sent privately",
     "noPlayers": "No players available.",
     "startChat": "Start a whisper",
+    "deadCannotSend": "Dead players cannot whisper. Use the Graveyard.",
+    "recipientDead": "This player is dead and cannot receive whispers.",
     "youPrefix": "You: {text}",
     "themPrefix": "{name}: {text}",
     "seed": {
@@ -255,8 +280,8 @@
       "killedBody": "Lucia (Villager) was killed by the Mafia.",
       "blockedTitle": "You were roleblocked",
       "blockedBody": "Your night action failed. Someone blocked you.",
-      "investigatedTitle": "Framing result",
-      "investigatedBody": "Your target will appear as Mafia to investigations.",
+      "investigatedTitle": "Kill order sent",
+      "investigatedBody": "Your order reached the crew before dawn.",
       "nightTitle": "Night 1 began",
       "nightBody": "The table went quiet and night actions started.",
       "voteTitle": "Vote result",
@@ -278,7 +303,33 @@
     "skipHint": "Skips the current timer or step and moves the table forward.",
     "unavailable": "No next step from this phase.",
     "host": "Host",
-    "mockNote": "Host-only controls. In the real game these actions belong to the host."
+    "mockNote": "Host-only controls. In the real game these actions belong to the host.",
+    "killMe": "Kill me",
+    "killMeHint": "Test the dead state and the Graveyard.",
+    "dead": "You are dead.",
+    "openGraveyard": "Open Graveyard"
+  },
+  "Graveyard": {
+    "title": "Graveyard",
+    "subtitle": "Only the dead can see this room.",
+    "pinned": "Dead chat",
+    "empty": "No messages yet.",
+    "placeholder": "Speak to the dead…",
+    "send": "Send",
+    "lockedTitle": "The grave is sealed",
+    "lockedBody": "Only dead players can enter the Graveyard.",
+    "backToWhispers": "Back to whispers",
+    "seed": {
+      "lucia1": "So this is the other side. Quiet, but at least nobody is voting.",
+      "lucia2": "They bought the frame. Watch Sofia — she is steering the table."
+    }
+  },
+  "Spectator": {
+    "title": "You are dead",
+    "subtitle": "You can watch the table, but you can no longer act or vote.",
+    "graveyard": "Open Graveyard",
+    "roster": "Still at the table",
+    "deadNote": "Your whispers are read-only now."
   },
   "Locale": {
     "switch": "Switch language",

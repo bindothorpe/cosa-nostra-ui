@@ -14,7 +14,8 @@
     "host": "Host",
     "ready": "Klaar",
     "night": "nacht",
-    "day": "dag"
+    "day": "dag",
+    "timeLeft": "Resterende tijd: {time}"
   },
   "Join": {
     "title": "Cosa Nostra",
@@ -65,7 +66,11 @@
     "peek": "Gluren naar rol",
     "youAre": "Jij bent de {role}",
     "crew": "Maffiaploeg",
-    "crewHint": "Alleen de Maffia ziet dit."
+    "crewHint": "Alleen de Maffia ziet dit.",
+    "tap": "Tik om je rol te bekijken",
+    "tapHide": "Tik om je rol te verbergen",
+    "pressHint": "Houd ingedrukt om te onthullen",
+    "tip": "Tip"
   },
   "Faction": {
     "mafia": "Maffia",
@@ -77,37 +82,43 @@
       "name": "Peetvader",
       "short": "Leidt de Maffia en geeft de moordopdracht.",
       "ability": "Kies elke nacht één speler die de Maffia elimineert.",
-      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen."
+      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen.",
+      "tip": "Blijf verborgen achter je ploeg. Laat moorden de Stad vooral op elkaar laten verdenken, en wees nooit de luidste stem."
     },
     "framer": {
       "name": "Vervalser",
       "short": "Laat een onschuldige schuldig lijken.",
       "ability": "Vervals elke nacht één speler. Onderzoeken zien hen als Maffia.",
-      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen."
+      "win": "De Maffia wint als er geen Stadsleden meer over zijn, of als niets hen nog kan stoppen.",
+      "tip": "Vervals spelers die waarschijnlijk onderzocht worden. Een mislukte vervalsing is erger dan geen vervalsing."
     },
     "detective": {
       "name": "Rechercheur",
       "short": "Vindt de Maffia, aanwijzing voor aanwijzing.",
       "ability": "Onderzoek elke nacht één speler en leer hun factie.",
-      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+      "win": "De Stad wint als elk Maffialid is geëlimineerd.",
+      "tip": "Deel resultaten voorzichtig. Zodra de Maffia weet dat jij de Rechercheur bent, ben jij het volgende doelwit."
     },
     "doctor": {
       "name": "Dokter",
       "short": "Houdt de Stad in leven.",
       "ability": "Bescherm elke nacht één speler tegen de dood.",
-      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+      "win": "De Stad wint als elk Maffialid is geëlimineerd.",
+      "tip": "Bescherm de spelers die het gesprek sturen, niet alleen jezelf."
     },
     "villager": {
       "name": "Burgeling",
       "short": "Geen krachten. Alleen je stem en je woorden.",
       "ability": "Geen nachtactie. Vind de Maffia via discussie en stemming.",
-      "win": "De Stad wint als elk Maffialid is geëlimineerd."
+      "win": "De Stad wint als elk Maffialid is geëlimineerd.",
+      "tip": "Je enige kracht is druk. Volg tegenstrijdigheden en dwing mensen stelling te nemen."
     },
     "jester": {
       "name": "Nar",
       "short": "Wil weggestemd worden — en alleen winnen.",
       "ability": "Geen nachtactie. Als de tafel je wegstemt, win je meteen.",
-      "win": "Word geëlimineerd door een dagstemming."
+      "win": "Word geëlimineerd door een dagstemming.",
+      "tip": "Doe verdacht, maar niet zo overduidelijk dat de tafel je als grap wegzet."
     }
   },
   "Action": {
@@ -126,7 +137,19 @@
     "remaining": "Eén actie per {phase}.",
     "open": "Actie openen",
     "close": "Actie sluiten",
-    "unavailable": "Nu geen actie beschikbaar."
+    "unavailable": "Nu geen actie beschikbaar.",
+    "sentences": {
+      "godfather": "Beveel {first} om {second} te vermoorden",
+      "framer": "Vervals eerst {first}, dan {second}, zodat onderzoeken hen als Maffia zien",
+      "detective": "Onderzoek {first} en leer hun factie",
+      "doctor": "Bescherm {first} vannacht tegen de dood",
+      "villager": "Je hebt vannacht geen actie",
+      "jester": "Je hebt vannacht geen actie"
+    },
+    "rosterTitle": "Spelers",
+    "dragHint": "Sleep een speler naar een lege plek. Sleep tussen plekken om te wisselen.",
+    "dropName": "Sleep een naam",
+    "slotAria": "Actieplek {index}"
   },
   "NightReport": {
     "title": "Wat er vannacht gebeurde",
@@ -188,6 +211,8 @@
     "sentNotice": "Privé verstuurd",
     "noPlayers": "Geen spelers beschikbaar.",
     "startChat": "Begin een fluister",
+    "deadCannotSend": "Dode spelers kunnen niet fluisteren. Gebruik het Kerkhof.",
+    "recipientDead": "Deze speler is dood en kan geen fluisters ontvangen.",
     "youPrefix": "Jij: {text}",
     "themPrefix": "{name}: {text}",
     "seed": {
@@ -255,8 +280,8 @@
       "killedBody": "Lucia (Burgeling) is vermoord door de Maffia.",
       "blockedTitle": "Je bent geblokkeerd",
       "blockedBody": "Je nachtactie mislukte. Iemand heeft je geblokkeerd.",
-      "investigatedTitle": "Vervalsingsresultaat",
-      "investigatedBody": "Je doelwit lijkt nu Maffia bij onderzoeken.",
+      "investigatedTitle": "Moordopdracht verstuurd",
+      "investigatedBody": "Je opdracht bereikte de ploeg voor de ochtend.",
       "nightTitle": "Nacht 1 is begonnen",
       "nightBody": "De tafel werd stil en de nachtacties begonnen.",
       "voteTitle": "Stemuitslag",
@@ -278,7 +303,33 @@
     "skipHint": "Slaat de huidige timer of stap over en zet de tafel verder.",
     "unavailable": "Geen volgende stap vanuit deze fase.",
     "host": "Host",
-    "mockNote": "Alleen voor de host. In het echte spel horen deze acties bij de host."
+    "mockNote": "Alleen voor de host. In het echte spel horen deze acties bij de host.",
+    "killMe": "Dood mij",
+    "killMeHint": "Test de doodstatus en het Kerkhof.",
+    "dead": "Je bent dood.",
+    "openGraveyard": "Open Kerkhof"
+  },
+  "Graveyard": {
+    "title": "Kerkhof",
+    "subtitle": "Alleen de doden zien deze kamer.",
+    "pinned": "Dodengepraat",
+    "empty": "Nog geen berichten.",
+    "placeholder": "Spreek tot de doden…",
+    "send": "Verstuur",
+    "lockedTitle": "Het graf is gesloten",
+    "lockedBody": "Alleen dode spelers kunnen het Kerkhof betreden.",
+    "backToWhispers": "Terug naar fluisters",
+    "seed": {
+      "lucia1": "Dus dit is de andere kant. Rustig, maar niemand stemt hier tenminste.",
+      "lucia2": "Ze trapten in de val. Let op Sofia — zij stuurt de tafel."
+    }
+  },
+  "Spectator": {
+    "title": "Je bent dood",
+    "subtitle": "Je mag meekijken, maar niet meer handelen of stemmen.",
+    "graveyard": "Open Kerkhof",
+    "roster": "Nog aan tafel",
+    "deadNote": "Je fluisters zijn nu alleen-lezen."
   },
   "Locale": {
     "switch": "Taal wisselen",

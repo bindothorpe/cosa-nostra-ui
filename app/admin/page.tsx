@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/game/app-shell";
 import { useGame } from "@/components/game/game-provider";
@@ -13,13 +14,14 @@ const ADVANCEABLE_PHASES = [
   "night",
   "nightReport",
   "dayDiscussion",
+  "voting",
   "voteResult",
 ];
 
 function AdminContent() {
   const t = useTranslations("Admin");
   const common = useTranslations("Common");
-  const { state, advancePhase } = useGame();
+  const { state, advancePhase, you, killSelf } = useGame();
   const phaseLabel = usePhaseLabel(state.phase, state.round);
   const canAdvance = ADVANCEABLE_PHASES.includes(state.phase);
 
@@ -58,6 +60,37 @@ function AdminContent() {
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         {canAdvance ? t("skipHint") : t("unavailable")}
       </p>
+
+      <div className="space-y-3 border-t pt-5">
+        {you.alive ? (
+          <>
+            <p className="text-center text-xs text-muted-foreground">
+              {t("killMeHint")}
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-11 w-full"
+              onClick={killSelf}
+            >
+              {t("killMe")}
+            </Button>
+          </>
+        ) : (
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-medium">{t("dead")}</p>
+            <Link
+              href="/graveyard"
+              className={buttonVariants({
+                variant: "outline",
+                className: "h-11 w-full",
+              })}
+            >
+              {t("openGraveyard")}
+            </Link>
+          </div>
+        )}
+      </div>
 
       <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
         {t("mockNote")}

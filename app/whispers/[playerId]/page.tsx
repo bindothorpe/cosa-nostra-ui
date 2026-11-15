@@ -16,15 +16,32 @@ function ThreadContent() {
   const params = useParams<{ playerId: string }>();
   const playerId = params.playerId;
   const t = useTranslations("Whispers");
-  const { getPlayer, state, sendWhisper, markThreadRead, ensureThread } =
-    useGame();
+  const {
+    getPlayer,
+    state,
+    sendWhisper,
+    markThreadRead,
+    ensureThread,
+    you,
+  } = useGame();
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const player = getPlayer(playerId);
   const thread = state.whispers.find((item) => item.playerId === playerId);
   const messages = thread?.messages ?? [];
-  const canSend = state.whispersLeft > 0 && text.trim().length > 0;
+  const blockedNotice = !you.alive
+    ? t("deadCannotSend")
+    : player && !player.alive
+      ? t("recipientDead")
+      : state.whispersLeft <= 0
+        ? t("limitReached")
+        : null;
+  const canSend =
+    you.alive &&
+    !!player?.alive &&
+    state.whispersLeft > 0 &&
+    text.trim().length > 0;
 
   useEffect(() => {
     if (!player) return;
@@ -114,6 +131,12 @@ function ThreadContent() {
         <div ref={endRef} />
       </div>
 
+      {blockedNotice ? (
+        <p className="pb-2 text-center text-[11px] leading-relaxed text-muted-foreground">
+          {blockedNotice}
+        </p>
+      ) : null}
+
       <form
         className="sticky bottom-20 rounded-xl border bg-background p-2"
         onSubmit={(event) => {
@@ -129,7 +152,7 @@ function ThreadContent() {
             onChange={(event) => setText(event.target.value)}
             placeholder={t("placeholder")}
             rows={1}
-            disabled={state.whispersLeft <= 0}
+            disabled={!you.alive || !player.alive || state.whispersLeft <= 0}
             className="min-h-11 resize-none border-0 bg-transparent px-2 py-3 text-base shadow-none focus-visible:ring-0"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -152,11 +175,6 @@ function ThreadContent() {
         </div>
       </form>
 
-      {state.whispersLeft <= 0 ? (
-        <p className="pt-2 text-center text-[11px] text-muted-foreground">
-          {t("limitReached")}
-        </p>
-      ) : null}
     </div>
   );
 }

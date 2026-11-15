@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { ChevronRight, MessageSquare, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "../game-provider";
-import { DiscussionTimer } from "../discussion-timer";
 import { PlayerAvatar } from "../player-avatar";
 
 export function DayScreen() {
@@ -27,8 +26,6 @@ export function DayScreen() {
           {t("subtitle")}
         </p>
       </header>
-
-      <DiscussionTimer />
 
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">{t("aliveList")}</span>

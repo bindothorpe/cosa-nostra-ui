@@ -1,32 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Sunrise } from "lucide-react";
 import { AlertItem } from "../alert-item";
 import { useGame } from "../game-provider";
 
-const NEXT_PHASE_SECONDS = 5;
-
 export function NightReportScreen() {
   const t = useTranslations("NightReport");
   const phaseT = useTranslations("Phase");
-  const { state, beginDay } = useGame();
-  const [seconds, setSeconds] = useState(NEXT_PHASE_SECONDS);
-
-  useEffect(() => {
-    if (seconds <= 0) {
-      beginDay();
-      return;
-    }
-
-    const timeout = window.setTimeout(
-      () => setSeconds((current) => current - 1),
-      1000,
-    );
-
-    return () => window.clearTimeout(timeout);
-  }, [seconds, beginDay]);
+  const { state } = useGame();
 
   const report = state.alerts.slice(0, 3);
 
@@ -52,18 +34,6 @@ export function NightReportScreen() {
           {t("quiet")}
         </p>
       )}
-
-      <div
-        className="rounded-xl border bg-card p-4 text-center"
-        aria-live="polite"
-      >
-        <p className="text-sm font-medium">
-          {t("startingIn", { seconds })}
-        </p>
-        <p className="mt-1 font-mono text-3xl font-semibold tabular-nums">
-          {seconds}
-        </p>
-      </div>
     </div>
   );
 }

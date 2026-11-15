@@ -66,13 +66,22 @@ export interface GameAlert {
   detailKey: string;
 }
 
+export interface GraveyardMessage {
+  id: string;
+  playerId: string;
+  text?: string;
+  textKey?: string;
+  time: string;
+}
+
 export interface GameState {
   phase: Phase;
+  phaseEndsAt: number | null;
   round: number;
   joined: boolean;
   playerName: string;
   players: Player[];
-  actionTarget: string | null;
+  actionTargets: string[];
   actionDone: boolean;
   yourVote: string | null;
   voteTally: Record<string, number> | null;
@@ -81,4 +90,6 @@ export interface GameState {
   whispers: WhisperThread[];
   whispersLeft: number;
   alerts: GameAlert[];
+  graveyard: GraveyardMessage[];
+  graveyardUnread: number;
 }

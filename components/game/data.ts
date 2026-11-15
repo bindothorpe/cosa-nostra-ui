@@ -1,6 +1,8 @@
 import type {
+  Faction,
   GameAlert,
   GameState,
+  GraveyardMessage,
   Player,
   RoleDef,
   RoleId,
@@ -25,7 +27,7 @@ export const PLAYER_SEED: Player[] = [
   {
     id: YOU_ID,
     name: "Alessia",
-    roleId: "framer",
+    roleId: "godfather",
     faction: "mafia",
     alive: true,
     isYou: true,
@@ -34,7 +36,7 @@ export const PLAYER_SEED: Player[] = [
   {
     id: "sofia",
     name: "Sofia",
-    roleId: "godfather",
+    roleId: "framer",
     faction: "mafia",
     alive: true,
     color: "bg-amber-500/15 text-amber-300",
@@ -216,13 +218,84 @@ export const BASE_VOTE_TALLY: Record<string, number> = {
   matteo: 1,
 };
 
+export const PHASE_DURATIONS: Partial<Record<GameState["phase"], number>> = {
+  roleReveal: 60 * 1000,
+  night: 90 * 1000,
+  nightReport: 10 * 1000,
+  dayDiscussion: 5 * 60 * 1000,
+  voting: 60 * 1000,
+  voteResult: 10 * 1000,
+};
+
+export interface ActionSlotRule {
+  allowedFactions?: Faction[];
+  excludeSelf?: boolean;
+  excludeOtherSlots?: boolean;
+}
+
+export const ACTION_SLOT_RULES: Partial<Record<RoleId, ActionSlotRule[]>> = {
+  godfather: [
+    { allowedFactions: ["mafia"] },
+    { excludeSelf: true, excludeOtherSlots: true },
+  ],
+  framer: [
+    { excludeSelf: true },
+    { excludeSelf: true, excludeOtherSlots: true },
+  ],
+  detective: [{ excludeSelf: true }],
+  doctor: [{ excludeSelf: true }],
+};
+
+export function canUseActionSlot(
+  rule: ActionSlotRule | undefined,
+  player: Player,
+  youId: string,
+  slots: (string | null)[],
+  slotIndex: number,
+  ignoreSlotIndex?: number,
+): boolean {
+  if (!rule) return false;
+  if (rule.allowedFactions && !rule.allowedFactions.includes(player.faction)) {
+    return false;
+  }
+  if (rule.excludeSelf && player.id === youId) return false;
+  if (
+    rule.excludeOtherSlots &&
+    slots.some(
+      (value, index) =>
+        index !== slotIndex &&
+        index !== ignoreSlotIndex &&
+        value === player.id,
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export const GRAVEYARD_SEED: GraveyardMessage[] = [
+  {
+    id: "grave-1",
+    playerId: "lucia",
+    textKey: "seed.lucia1",
+    time: "08:12",
+  },
+  {
+    id: "grave-2",
+    playerId: "lucia",
+    textKey: "seed.lucia2",
+    time: "08:19",
+  },
+];
+
 export const INITIAL_STATE: GameState = {
   phase: "lobby",
+  phaseEndsAt: null,
   round: 1,
   joined: false,
   playerName: "Alessia",
   players: PLAYER_SEED,
-  actionTarget: null,
+  actionTargets: [],
   actionDone: false,
   yourVote: null,
   voteTally: null,
@@ -231,6 +304,8 @@ export const INITIAL_STATE: GameState = {
   whispers: WHISPER_SEED,
   whispersLeft: WHISPERS_PER_DAY,
   alerts: ALERT_SEED,
+  graveyard: GRAVEYARD_SEED,
+  graveyardUnread: 2,
 };
 
 export function playerName(players: Player[], id: string | null): string {

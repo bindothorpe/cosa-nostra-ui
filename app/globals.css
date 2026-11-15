@@ -138,6 +138,6 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply overscroll-none;
+    @apply overflow-x-clip overscroll-none;
   }
 }

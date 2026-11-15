@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -85,6 +91,68 @@ function CodexRole({ id }: { id: RoleId }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function CodexRoleAccordion() {
+  const t = useTranslations("Codex");
+  const roleT = useTranslations("Roles");
+  const { state } = useGame();
+
+  return (
+    <Accordion multiple className="rounded-xl border bg-card px-4">
+      {ROLE_IDS.map((id) => {
+        const count = state.players.filter(
+          (player) => player.roleId === id,
+        ).length;
+
+        return (
+          <AccordionItem key={id} value={id}>
+            <AccordionTrigger className="py-3">
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-1">
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">
+                    {roleT(`${id}.name`)}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                    {roleT(`${id}.short`)}
+                  </span>
+                </span>
+                <FactionBadge
+                  faction={ROLES[id].faction}
+                  className="shrink-0"
+                />
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              {count > 0 ? (
+                <Badge variant="secondary" className="mb-2">
+                  {t("inPlay", { count })}
+                </Badge>
+              ) : null}
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("abilityLabel")}
+                  </p>
+                  <p className="mt-0.5 text-sm leading-relaxed">
+                    {roleT(`${id}.ability`)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("winLabel")}
+                  </p>
+                  <p className="mt-0.5 text-sm leading-relaxed">
+                    {roleT(`${id}.win`)}
+                  </p>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
   );
 }
 
@@ -242,10 +310,8 @@ function CodexContent() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="roles" className="space-y-2">
-            {ROLE_IDS.map((id) => (
-              <CodexRole key={id} id={id} />
-            ))}
+          <TabsContent value="roles">
+            <CodexRoleAccordion />
           </TabsContent>
 
           <TabsContent value="factions" className="space-y-2">

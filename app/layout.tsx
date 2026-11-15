@@ -29,7 +29,7 @@ async function IntlShell({ children }: { children: React.ReactNode }) {
     <NextIntlClientProvider>
       <div
         lang={locale}
-        className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x bg-background"
+        className="mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip border-x bg-background"
       >
         {children}
       </div>

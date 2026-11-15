@@ -7,8 +7,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BottomNav } from "./bottom-nav";
 import { useGame } from "./game-provider";
-import { HoldRoleButton } from "./hold-role-button";
+import { RolePeekButton } from "./role-peek-button";
 import { LocaleSwitcher } from "./locale-switcher";
+import { PhaseTimer } from "./phase-timer";
 import { usePhaseLabel } from "./use-phase-label";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -48,27 +49,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/75">
         <div className="flex h-16 items-center justify-between gap-2 px-4">
-          <Link
-            href="/play"
-            aria-label={`${t("Common.appName")} — ${phaseLabel}`}
-            className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Link
+              href="/play"
+              aria-label={t("Common.appName")}
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <Drama className="size-4" />
-            </span>
-            <span className="hidden min-w-0 min-[360px]:block">
-              <span className="block truncate text-sm font-semibold leading-tight">
-                {t("Common.appName")}
-              </span>
-              <span className="block truncate text-[11px] text-muted-foreground">
-                {phaseLabel}
-              </span>
-            </span>
-          </Link>
+            </Link>
+            <PhaseTimer phaseLabel={phaseLabel} />
+          </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
             <LocaleSwitcher />
-            <HoldRoleButton />
+            <RolePeekButton />
           </div>
         </div>
       </header>
