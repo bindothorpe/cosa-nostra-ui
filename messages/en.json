@@ -131,7 +131,7 @@
     "mockRoom": "Mock table"
   },
   "Lobby": {
-    "room": "Room {code}",
+    "room": "Room",
     "title": "Waiting for the table",
     "subtitle": "The game starts when everyone is seated.",
     "players": "{count} of {max} players",

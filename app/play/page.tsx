@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/game/app-shell";
 import { useGame } from "@/components/game/game-provider";
+import { RedirectScreen } from "@/components/game/require-joined";
 import { DayScreen } from "@/components/game/screens/day-screen";
 import { GameOverScreen } from "@/components/game/screens/game-over-screen";
 import { NightActionScreen } from "@/components/game/screens/night-action-screen";
@@ -16,14 +15,22 @@ import { VoteResultScreen } from "@/components/game/screens/vote-result-screen";
 import { VotingScreen } from "@/components/game/screens/voting-screen";
 
 function PlayContent() {
-  const t = useTranslations("Lobby");
+  const router = useRouter();
   const { state, you } = useGame();
+
+  useEffect(() => {
+    if (state.joined && state.phase === "lobby") {
+      router.replace("/lobby");
+    }
+  }, [router, state.joined, state.phase]);
+
+  if (state.phase === "lobby") {
+    return <RedirectScreen />;
+  }
 
   const deadSpectator =
     !you.alive &&
-    !["gameOver", "nightReport", "voteResult", "lobby"].includes(
-      state.phase,
-    );
+    !["gameOver", "nightReport", "voteResult"].includes(state.phase);
 
   if (deadSpectator) {
     return <SpectatorScreen />;
@@ -45,24 +52,7 @@ function PlayContent() {
     case "gameOver":
       return <GameOverScreen />;
     default:
-      return (
-        <div className="flex min-h-[60dvh] items-center">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>{t("title")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-              <Link
-                href="/lobby"
-                className={buttonVariants({ className: "h-11 w-full" })}
-              >
-                {t("start")}
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      );
+      return <RedirectScreen />;
   }
 }
 

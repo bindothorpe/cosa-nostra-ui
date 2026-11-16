@@ -101,12 +101,14 @@ function SentenceSlot({
   index,
   playerId,
   players,
+  available,
   invalid,
   onClear,
 }: {
   index: number;
   playerId: string | null;
   players: Player[];
+  available: boolean;
   invalid: boolean;
   onClear: () => void;
 }) {
@@ -143,9 +145,15 @@ function SentenceSlot({
     <span
       ref={setDropRef}
       aria-label={t("slotAria", { index: index + 1 })}
+      data-drop-state={
+        invalid ? "invalid" : available ? "available" : undefined
+      }
       className={cn(
-        "mx-1 inline-flex min-h-9 min-w-24 items-center justify-center rounded-lg align-middle",
-        isOver && "ring-2 ring-ring ring-offset-2 ring-offset-card",
+        "mx-1 inline-flex min-h-9 min-w-24 items-center justify-center rounded-lg align-middle transition-colors",
+        available && "bg-emerald-400/5 ring-2 ring-emerald-400/50",
+        available &&
+          isOver &&
+          "bg-emerald-400/10 ring-emerald-400 ring-offset-2 ring-offset-card",
         invalid && "ring-2 ring-faction-mafia ring-offset-2 ring-offset-card",
       )}
     >
@@ -346,6 +354,10 @@ export function ActionPanel() {
                       slotIndex,
                       activeDrag?.fromSlot ?? undefined,
                     );
+                  const noOp =
+                    !!activePlayer &&
+                    (activeDrag?.fromSlot === slotIndex ||
+                      slots[slotIndex] === activePlayer.id);
 
                   return (
                     <SentenceSlot
@@ -353,6 +365,7 @@ export function ActionPanel() {
                       index={slotIndex}
                       playerId={slots[slotIndex] ?? null}
                       players={alivePlayers}
+                      available={!!activePlayer && valid && !noOp}
                       invalid={!!activePlayer && !valid}
                       onClear={() => clearSlot(slotIndex)}
                     />

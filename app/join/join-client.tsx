@@ -90,9 +90,9 @@ export function JoinClient() {
             <h1 className="mt-2 font-display text-4xl leading-none tracking-tight">
               {t("title")}
             </h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            {/* <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
               {t("subtitle")}
-            </p>
+            </p> */}
           </div>
 
           <div className="mt-6">

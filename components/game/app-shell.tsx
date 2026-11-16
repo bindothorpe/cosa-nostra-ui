@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Drama } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BottomNav } from "./bottom-nav";
 import { useGame } from "./game-provider";
+import { RequireJoined } from "./require-joined";
 import { RolePeekButton } from "./role-peek-button";
 import { LocaleSwitcher } from "./locale-switcher";
 import { PhaseTimer } from "./phase-timer";
@@ -17,59 +16,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { state } = useGame();
   const phaseLabel = usePhaseLabel(state.phase, state.round);
 
-  if (!state.joined) {
-    return (
-      <div className="flex min-h-dvh flex-col px-4 pb-8 pt-6">
-        <div className="flex justify-end">
-          <LocaleSwitcher />
-        </div>
-        <div className="flex flex-1 items-center">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>{t("Lobby.title")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {t("Join.subtitle")}
-              </p>
-              <Link
-                href="/"
-                className={buttonVariants({ className: "h-11 w-full" })}
-              >
-                {t("Lobby.joinFirst")}
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="flex h-16 items-center justify-between gap-2 px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Link
-              href="/play"
-              aria-label={t("Common.appName")}
-              className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Drama className="size-4" />
-            </Link>
-            <PhaseTimer phaseLabel={phaseLabel} />
+    <RequireJoined>
+      <div className="flex min-h-dvh flex-col">
+        <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="flex h-16 items-center justify-between gap-2 px-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Link
+                href="/play"
+                aria-label={t("Common.appName")}
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Drama className="size-4" />
+              </Link>
+              <PhaseTimer phaseLabel={phaseLabel} />
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              <LocaleSwitcher />
+              <RolePeekButton />
+            </div>
           </div>
+        </header>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            <LocaleSwitcher />
-            <RolePeekButton />
-          </div>
-        </div>
-      </header>
+        <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
 
-      <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
-
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    </RequireJoined>
   );
 }

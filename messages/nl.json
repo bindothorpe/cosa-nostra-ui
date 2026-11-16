@@ -131,7 +131,7 @@
     "mockRoom": "Mocktafel"
   },
   "Lobby": {
-    "room": "Kamer {code}",
+    "room": "Kamer",
     "title": "Wachten op de tafel",
     "subtitle": "Het spel begint zodra iedereen zit.",
     "players": "{count} van {max} spelers",
