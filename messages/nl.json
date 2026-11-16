@@ -15,7 +15,9 @@
     "ready": "Klaar",
     "night": "nacht",
     "day": "dag",
-    "timeLeft": "Resterende tijd: {time}"
+    "timeLeft": "Resterende tijd: {time}",
+    "waitingFor": "Wachten op {count, plural, =1 {1 speler} other {# spelers}}.",
+    "allReady": "Iedereen is klaar."
   },
   "Join": {
     "title": "Cosa Nostra",

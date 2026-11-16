@@ -17,13 +17,14 @@ import {
   type Modifier,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { Check, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ACTION_SLOT_RULES, canUseActionSlot } from "./data";
 import { useGame } from "./game-provider";
 import { PlayerAvatar } from "./player-avatar";
+import { ReadyStatus } from "./ready-status";
 import type { Player } from "./types";
 
 type DragData =
@@ -180,7 +181,16 @@ function SentenceSlot({
 export function ActionPanel() {
   const t = useTranslations("Action");
   const common = useTranslations("Common");
-  const { state, you, yourRole, alivePlayers, submitAction } = useGame();
+  const {
+    state,
+    you,
+    yourRole,
+    alivePlayers,
+    submitAction,
+    unready,
+    isReady,
+    waitingCount,
+  } = useGame();
   const isNight = state.phase === "night";
   const hasAction = yourRole.abilityPhase === (isNight ? "night" : "day");
   const phaseWord = isNight ? common("night") : common("day");
@@ -268,6 +278,15 @@ export function ActionPanel() {
       return;
     }
 
+    if (
+      (data.type === "slot" && data.index === destination) ||
+      (data.type === "player" && slots[destination] === data.playerId)
+    ) {
+      return;
+    }
+
+    if (isReady) unready();
+
     setSlots((current) => {
       const next = current.map((value) =>
         value === data.playerId ? null : value,
@@ -286,6 +305,7 @@ export function ActionPanel() {
 
   function clearSlot(index: number) {
     if (dragHappened.current) return;
+    if (isReady) unready();
     setSlots((current) =>
       current.map((value, slotIndex) => (slotIndex === index ? null : value)),
     );
@@ -362,18 +382,17 @@ export function ActionPanel() {
 
         <Button
           type="button"
-          className="h-12 w-full"
-          disabled={!ready}
+          className="h-12 w-full gap-2"
+          disabled={!ready || isReady}
           onClick={() => {
             if (!ready) return;
             submitAction(slots.filter((slot): slot is string => !!slot));
           }}
         >
+          {isReady ? <Check className="size-4" /> : null}
           {t("confirm")}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          {t("remaining", { phase: phaseWord })}
-        </p>
+        <ReadyStatus show={isReady} waitingCount={waitingCount} />
       </div>
 
       <DragOverlay>

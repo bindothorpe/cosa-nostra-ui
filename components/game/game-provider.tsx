@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   BASE_VOTE_TALLY,
+  BOT_READY_INTERVAL,
   INITIAL_STATE,
   PHASE_DURATIONS,
   PLAYER_SEED,
@@ -26,14 +27,14 @@ interface GameContextValue {
   alivePlayers: Player[];
   unreadWhispers: number;
   unreadAlerts: number;
+  isReady: boolean;
+  waitingCount: number;
   join: (name: string) => void;
   startGame: () => void;
-  seeRole: () => void;
+  markReady: () => void;
+  unready: () => void;
   submitAction: (targets: string[]) => void;
-  beginDay: () => void;
-  startVote: () => void;
   castVote: (playerId: string) => void;
-  finishGame: () => void;
   advancePhase: () => void;
   resetGame: () => void;
   sendWhisper: (playerId: string, text: string) => void;
@@ -86,6 +87,7 @@ function enterPhase(
     ...state,
     ...extra,
     phase,
+    readyIds: [],
     phaseEndsAt: duration > 0 ? Date.now() + duration : null,
   };
 }
@@ -154,6 +156,52 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(interval);
   }, [state.phaseEndsAt]);
 
+  useEffect(() => {
+    const gated: Phase[] = [
+      "roleReveal",
+      "night",
+      "dayDiscussion",
+      "voting",
+    ];
+    if (!gated.includes(state.phase)) return;
+
+    const self = state.players.find((player) => player.isYou);
+    const selfReady =
+      !self || !self.alive || state.readyIds.includes(self.id);
+    if (!selfReady) return;
+
+    const living = state.players.filter((player) => player.alive);
+    const allReady = living.every((player) =>
+      state.readyIds.includes(player.id),
+    );
+    const delay = allReady ? 0 : BOT_READY_INTERVAL;
+
+    const timeout = window.setTimeout(() => {
+      setState((current) => {
+        if (current.phase !== state.phase) return current;
+
+        const livingNow = current.players.filter((player) => player.alive);
+        const everyoneReady = livingNow.every((player) =>
+          current.readyIds.includes(player.id),
+        );
+
+        if (everyoneReady) return nextPhaseState(current);
+
+        const nextBot = livingNow.find(
+          (player) => !current.readyIds.includes(player.id),
+        );
+        if (!nextBot) return current;
+
+        return {
+          ...current,
+          readyIds: [...current.readyIds, nextBot.id],
+        };
+      });
+    }, delay);
+
+    return () => window.clearTimeout(timeout);
+  }, [state.phase, state.readyIds, state.players]);
+
   const join = useCallback((name: string) => {
     const trimmed = name.trim();
     setState((current) => ({
@@ -181,34 +229,63 @@ export function GameProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const seeRole = useCallback(() => {
-    setState((current) => enterPhase(current, "night"));
+  const markReady = useCallback(() => {
+    setState((current) => {
+      const self = current.players.find((player) => player.isYou);
+      if (!self?.alive || current.readyIds.includes(self.id)) return current;
+      return {
+        ...current,
+        readyIds: [...current.readyIds, self.id],
+      };
+    });
+  }, []);
+
+  const unready = useCallback(() => {
+    setState((current) => {
+      const self = current.players.find((player) => player.isYou);
+      if (!self?.alive || !current.readyIds.includes(self.id)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        actionDone: false,
+        readyIds: current.readyIds.filter((id) => id !== self.id),
+      };
+    });
   }, []);
 
   const submitAction = useCallback((targets: string[]) => {
-    setState((current) =>
-      enterPhase(current, "nightReport", {
+    setState((current) => {
+      const self = current.players.find((player) => player.isYou);
+      const readyIds =
+        self?.alive && !current.readyIds.includes(self.id)
+          ? [...current.readyIds, self.id]
+          : current.readyIds;
+
+      return {
+        ...current,
         actionTargets: targets,
         actionDone: true,
-        players: killLucia(current.players),
-      }),
-    );
-  }, []);
-
-  const beginDay = useCallback(() => {
-    setState((current) => enterPhase(current, "dayDiscussion"));
-  }, []);
-
-  const startVote = useCallback(() => {
-    setState((current) => enterPhase(current, "voting"));
+        readyIds,
+      };
+    });
   }, []);
 
   const castVote = useCallback((playerId: string) => {
-    setState((current) => resolveVote(current, playerId));
-  }, []);
+    setState((current) => {
+      const self = current.players.find((player) => player.isYou);
+      const readyIds =
+        self?.alive && !current.readyIds.includes(self.id)
+          ? [...current.readyIds, self.id]
+          : current.readyIds;
 
-  const finishGame = useCallback(() => {
-    setState((current) => enterPhase(current, "gameOver"));
+      return {
+        ...current,
+        yourVote: playerId,
+        readyIds,
+      };
+    });
   }, []);
 
   const advancePhase = useCallback(() => {
@@ -369,6 +446,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     state.whispers.reduce((total, thread) => total + thread.unread, 0) +
     (you.alive ? 0 : state.graveyardUnread);
   const unreadAlerts = state.alerts.filter((alert) => !alert.read).length;
+  const isReady = you.alive && state.readyIds.includes(you.id);
+  const waitingCount = alivePlayers.filter(
+    (player) => !state.readyIds.includes(player.id),
+  ).length;
 
   const value = useMemo<GameContextValue>(
     () => ({
@@ -378,14 +459,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       alivePlayers,
       unreadWhispers,
       unreadAlerts,
+      isReady,
+      waitingCount,
       join,
       startGame,
-      seeRole,
+      markReady,
+      unready,
       submitAction,
-      beginDay,
-      startVote,
       castVote,
-      finishGame,
       advancePhase,
       resetGame,
       sendWhisper,
@@ -404,14 +485,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       alivePlayers,
       unreadWhispers,
       unreadAlerts,
+      isReady,
+      waitingCount,
       join,
       startGame,
-      seeRole,
+      markReady,
+      unready,
       submitAction,
-      beginDay,
-      startVote,
       castVote,
-      finishGame,
       advancePhase,
       resetGame,
       sendWhisper,

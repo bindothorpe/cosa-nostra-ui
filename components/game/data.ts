@@ -218,6 +218,8 @@ export const BASE_VOTE_TALLY: Record<string, number> = {
   matteo: 1,
 };
 
+export const BOT_READY_INTERVAL = 280;
+
 export const PHASE_DURATIONS: Partial<Record<GameState["phase"], number>> = {
   roleReveal: 60 * 1000,
   night: 90 * 1000,
@@ -297,6 +299,7 @@ export const INITIAL_STATE: GameState = {
   players: PLAYER_SEED,
   actionTargets: [],
   actionDone: false,
+  readyIds: [],
   yourVote: null,
   voteTally: null,
   eliminatedId: null,

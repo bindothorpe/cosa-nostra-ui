@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Lock, Send, Skull } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { ArrowLeft, Lock, Send, Skull } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { AppShell } from "@/components/game/app-shell";
@@ -34,25 +34,27 @@ function GraveyardContent() {
 
   if (you.alive) {
     return (
-      <div className="flex min-h-[60dvh] items-center">
-        <Card className="w-full">
-          <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-            <div className="grid size-14 place-items-center rounded-full border bg-card">
-              <Lock className="size-6 text-muted-foreground" />
-            </div>
-            <h1 className="text-xl font-semibold">{t("lockedTitle")}</h1>
-            <p className="text-sm text-muted-foreground">{t("lockedBody")}</p>
-            <Link
-              href="/whispers"
-              className={buttonVariants({
-                variant: "outline",
-                className: "mt-2 h-11 w-full",
-              })}
-            >
-              {t("backToWhispers")}
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-[60dvh] flex-col">
+        <Link
+          href="/whispers"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          {t("backToWhispers")}
+        </Link>
+        <div className="flex flex-1 items-center">
+          <Card className="w-full">
+            <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+              <div className="grid size-14 place-items-center rounded-full border bg-card">
+                <Lock className="size-6 text-muted-foreground" />
+              </div>
+              <h1 className="text-xl font-semibold">{t("lockedTitle")}</h1>
+              <p className="text-sm text-muted-foreground">
+                {t("lockedBody")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -62,6 +64,14 @@ function GraveyardContent() {
       className="flex min-h-[calc(100dvh-9rem)] flex-col"
       data-graveyard
     >
+      <Link
+        href="/whispers"
+        className="mb-3 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        {t("backToWhispers")}
+      </Link>
+
       <header className="space-y-1.5 border-b pb-3">
         <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           <Skull className="size-3" />

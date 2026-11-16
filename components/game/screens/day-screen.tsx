@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, MessageSquare, Sun } from "lucide-react";
+import { Check, ChevronRight, MessageSquare, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "../game-provider";
 import { PlayerAvatar } from "../player-avatar";
+import { ReadyStatus } from "../ready-status";
 
 export function DayScreen() {
   const t = useTranslations("Day");
   const whisperT = useTranslations("Whispers");
   const phaseT = useTranslations("Phase");
   const common = useTranslations("Common");
-  const { state, startVote } = useGame();
+  const { state, markReady, isReady, waitingCount } = useGame();
 
   return (
     <div className="space-y-5">
@@ -78,9 +79,16 @@ export function DayScreen() {
         <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
       </Link>
 
-      <Button type="button" className="h-12 w-full" onClick={startVote}>
+      <Button
+        type="button"
+        className="h-12 w-full gap-2"
+        disabled={isReady}
+        onClick={markReady}
+      >
+        {isReady ? <Check className="size-4" /> : null}
         {t("startVote")}
       </Button>
+      <ReadyStatus show={isReady} waitingCount={waitingCount} />
     </div>
   );
 }

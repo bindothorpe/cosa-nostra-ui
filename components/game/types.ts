@@ -83,6 +83,7 @@ export interface GameState {
   players: Player[];
   actionTargets: string[];
   actionDone: boolean;
+  readyIds: string[];
   yourVote: string | null;
   voteTally: Record<string, number> | null;
   eliminatedId: string | null;

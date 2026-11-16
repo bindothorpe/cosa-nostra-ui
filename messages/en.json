@@ -15,7 +15,9 @@
     "ready": "Ready",
     "night": "night",
     "day": "day",
-    "timeLeft": "Time left: {time}"
+    "timeLeft": "Time left: {time}",
+    "waitingFor": "Waiting for {count, plural, =1 {1 player} other {# players}}.",
+    "allReady": "All players ready."
   },
   "Join": {
     "title": "Cosa Nostra",

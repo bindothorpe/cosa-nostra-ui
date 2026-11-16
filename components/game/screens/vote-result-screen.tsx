@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FactionBadge } from "../faction-badge";
 import { useGame } from "../game-provider";
@@ -11,7 +10,7 @@ export function VoteResultScreen() {
   const t = useTranslations("Vote");
   const roleT = useTranslations("Roles");
   const factionT = useTranslations("Faction");
-  const { state, getPlayer, finishGame } = useGame();
+  const { state, getPlayer } = useGame();
 
   const eliminated = state.eliminatedId
     ? getPlayer(state.eliminatedId)
@@ -91,9 +90,6 @@ export function VoteResultScreen() {
         })}
       </div>
 
-      <Button type="button" className="h-12 w-full" onClick={finishGame}>
-        {t("finish")}
-      </Button>
     </div>
   );
 }

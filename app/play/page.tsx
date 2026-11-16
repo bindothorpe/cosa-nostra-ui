@@ -19,7 +19,13 @@ function PlayContent() {
   const t = useTranslations("Lobby");
   const { state, you } = useGame();
 
-  if (!you.alive && state.phase !== "gameOver" && state.phase !== "lobby") {
+  const deadSpectator =
+    !you.alive &&
+    !["gameOver", "nightReport", "voteResult", "lobby"].includes(
+      state.phase,
+    );
+
+  if (deadSpectator) {
     return <SpectatorScreen />;
   }
 
