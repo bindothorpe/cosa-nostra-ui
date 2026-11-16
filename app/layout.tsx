@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { GameProvider } from "@/components/game/game-provider";
+import { PhaseGlow } from "@/components/game/phase-glow";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,8 +30,9 @@ async function IntlShell({ children }: { children: React.ReactNode }) {
     <NextIntlClientProvider>
       <div
         lang={locale}
-        className="mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip border-x bg-background"
+        className="relative isolate mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip border-x bg-background"
       >
+        <PhaseGlow />
         {children}
       </div>
     </NextIntlClientProvider>

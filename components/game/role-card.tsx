@@ -16,7 +16,7 @@ import type { Player } from "./types";
 
 export function RoleCard({
   player,
-  displayBorder,
+  displayBorder = true,
   className,
 }: {
   player: Player;
@@ -87,12 +87,21 @@ export function RoleCard({
           {factionT(player.faction)}
         </Badge>
         <h2
+          data-role-name
           className={cn(
-            "mt-3 text-3xl font-semibold tracking-tight transition-[filter] duration-150",
+            "mt-3 min-h-9 text-3xl font-semibold tracking-tight transition-[filter] duration-150",
             !revealed && "blur-[7px]",
           )}
         >
-          {roleT(`${player.roleId}.name`)}
+          {revealed ? (
+            roleT(`${player.roleId}.name`)
+          ) : (
+            <span
+              data-role-redacted
+              aria-hidden="true"
+              className="inline-block h-7 w-44 rounded-md bg-foreground/60 align-middle"
+            />
+          )}
         </h2>
         <p className="mt-1 text-[11px] text-muted-foreground">
           {revealed ? t("holding") : t("pressHint")}
