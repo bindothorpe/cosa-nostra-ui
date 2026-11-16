@@ -19,9 +19,109 @@
     "waitingFor": "Wachten op {count, plural, =1 {1 speler} other {# spelers}}.",
     "allReady": "Iedereen is klaar."
   },
+  "Landing": {
+    "table": "De tafel van vanavond",
+    "title": "Cosa Nostra",
+    "subtitle": "Een spel van gefluister, leugens en overleven. Iedereen een telefoon. Eén stoel aan tafel.",
+    "joinLabel": "Kamercode",
+    "codePlaceholder": "ABCDE",
+    "join": "Meedoen",
+    "joinHint": "Vraag de host om de code van vijf letters.",
+    "codeErrors": {
+      "empty": "Vul een kamercode in.",
+      "length": "Kamercodes bestaan uit precies 5 letters."
+    },
+    "or": "of",
+    "create": "Kamer maken",
+    "createHint": "Stel stoelen, facties en fasen in"
+  },
+  "Identity": {
+    "name": "Spelersnaam",
+    "namePlaceholder": "bijv. Alessia",
+    "nameRequired": "Vul een naam in om plaats te nemen.",
+    "nameTooLong": "Houd je naam op 20 tekens of minder.",
+    "roleLabel": "Ik ben oké met een ingewikkelde rol",
+    "roleHint": "Laat dit uit als je een eenvoudigere rol wilt terwijl je de tafel leert kennen."
+  },
+  "JoinRoom": {
+    "eyebrow": "Uitnodiging",
+    "title": "Sluit aan aan tafel",
+    "subtitle": "Eén code, één stoel. Geen account nodig.",
+    "codeLabel": "Jouw kamercode",
+    "join": "Neem plaats",
+    "back": "Terug naar de tafel",
+    "invalidTitle": "Die code klopt niet",
+    "invalidBody": "Kamercodes bestaan uit precies 5 letters. Ga terug en probeer opnieuw."
+  },
+  "CreateRoom": {
+    "steps": {
+      "table": "Tafel",
+      "timers": "Fasen",
+      "identity": "Jij"
+    },
+    "stepCopy": {
+      "table": {
+        "title": "Dek de tafel",
+        "subtitle": "Kies hoeveel stoelen en hoe de facties verdeeld worden."
+      },
+      "timers": {
+        "title": "Bepaal het tempo",
+        "subtitle": "Houd het standaardritme aan of geef elke fase een eigen duur."
+      },
+      "identity": {
+        "title": "Neem het hoofd van tafel",
+        "subtitle": "Kies je naam en welk soort rol je wilt."
+      }
+    },
+    "playersTitle": "Stoelen aan tafel",
+    "playersHint": "{min} tot {max} spelers. De kamer wordt voor dit aantal stoelen opgebouwd.",
+    "decreasePlayers": "Eén stoel minder",
+    "increasePlayers": "Eén stoel meer",
+    "factionTitle": "Factieverdeling",
+    "factionHint": "Standaard houdt de tafel in balans. Aangepast laat je elk factietotaal zelf instellen.",
+    "default": "Standaard",
+    "custom": "Aangepast",
+    "total": "Totaal",
+    "rolesPreview": "Rollen in het spel",
+    "decreaseFaction": "Eén {faction} minder",
+    "increaseFaction": "Eén {faction} meer",
+    "errors": {
+      "sum": "Factietotalen moeten samen {count} zijn.",
+      "mafia": "Er is minstens één Mafia-stoel nodig.",
+      "town": "Er is minstens één Town-stoel nodig.",
+      "neutral": "Er is maximaal één Neutrale stoel toegestaan."
+    },
+    "timersTitle": "Fasetimers",
+    "timersHint": "Standaard houdt het spel in beweging. Aangepast geeft je exacte controle.",
+    "seconds": "sec",
+    "timerRange": "Gebruik een duur tussen {min} en {max} seconden.",
+    "identityTitle": "Wie is de host?",
+    "identityHint": "Deze naam zit aan het hoofd van de tafel.",
+    "create": "Kamer maken",
+    "next": "Doorgaan",
+    "back": "Terug",
+    "createHint": "Er wordt een code van vijf letters gemaakt zodra de kamer open is.",
+    "stepHint": "Je keuzes worden de kamerinstellingen."
+  },
+  "RoomConfig": {
+    "title": "Kamerinstellingen",
+    "seats": "{count} stoelen",
+    "factions": "Facties",
+    "timers": "Timers",
+    "default": "Standaard",
+    "custom": "Aangepast",
+    "phases": {
+      "roleReveal": "Rolonthulling",
+      "night": "Nacht",
+      "nightReport": "Nachtrapport",
+      "dayDiscussion": "Dagdiscussie",
+      "voting": "Stemming",
+      "voteResult": "Stemuitslag"
+    }
+  },
   "Join": {
     "title": "Cosa Nostra",
-    "subtitle": "Een spel van fluisters, leugens en overleven. Iedereen een telefoon. Twaalf stoelen aan tafel.",
+    "subtitle": "Een spel van fluisters, leugens en overleven. Iedereen een telefoon. Eén stoel aan tafel.",
     "roomCode": "Kamercode",
     "name": "Je naam",
     "namePlaceholder": "bijv. Alessia",
@@ -35,8 +135,9 @@
     "title": "Wachten op de tafel",
     "subtitle": "Het spel begint zodra iedereen zit.",
     "players": "{count} van {max} spelers",
-    "copy": "Kopieer code",
+    "copy": "Kopieer link",
     "copied": "Gekopieerd",
+    "copyFailed": "Kopiëren mislukt",
     "start": "Start spel",
     "hint": "In het echte spel start de host de ronde.",
     "leave": "Tafel verlaten",

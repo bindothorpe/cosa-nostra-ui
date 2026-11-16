@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PHASE_DURATIONS } from "./data";
 import { useGame } from "./game-provider";
+import type { ConfigurablePhase } from "./types";
 
 export function usePhaseRemaining() {
   const { state } = useGame();
@@ -20,7 +20,9 @@ export function usePhaseRemaining() {
     return { seconds: 0, total: 0, progress: 0 };
   }
 
-  const total = (PHASE_DURATIONS[state.phase] ?? 0) / 1000;
+  const total =
+    (state.roomConfig.phaseDurations[state.phase as ConfigurablePhase] ?? 0) /
+    1000;
   const remaining = Math.min(
     Math.max(0, (state.phaseEndsAt - now) / 1000),
     total,

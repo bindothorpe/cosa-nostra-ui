@@ -20,9 +20,29 @@ export type Phase =
 
 export type AbilityPhase = "night" | "day" | "passive";
 
+export type RoleComplexity = "simple" | "medium" | "complex";
+
 export interface RoleDef {
   faction: Faction;
   abilityPhase: AbilityPhase;
+  complexity: RoleComplexity;
+}
+
+export type FactionCounts = Record<Faction, number>;
+
+export type ConfigurablePhase = Exclude<Phase, "lobby" | "gameOver">;
+
+export type PhaseDurations = Record<ConfigurablePhase, number>;
+
+export type RoomPreset = "default" | "custom";
+
+export interface RoomConfig {
+  playerCount: number;
+  factionPreset: RoomPreset;
+  factionCounts: FactionCounts;
+  roleCounts: Record<RoleId, number>;
+  timerPreset: RoomPreset;
+  phaseDurations: PhaseDurations;
 }
 
 export interface Player {
@@ -80,6 +100,10 @@ export interface GameState {
   round: number;
   joined: boolean;
   playerName: string;
+  roomCode: string;
+  isHost: boolean;
+  allowComplexRoles: boolean;
+  roomConfig: RoomConfig;
   players: Player[];
   actionTargets: string[];
   actionDone: boolean;

@@ -4,29 +4,36 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Copy, LogOut } from "lucide-react";
+import { Check, CircleAlert, Copy, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MAX_PLAYERS, ROOM_CODE } from "@/components/game/data";
 import { useGame } from "@/components/game/game-provider";
 import { LocaleSwitcher } from "@/components/game/locale-switcher";
 import { PlayerAvatar } from "@/components/game/player-avatar";
+import { RoomConfigSummary } from "@/components/room/room-config-summary";
 
 export default function LobbyPage() {
   const t = useTranslations("Lobby");
   const common = useTranslations("Common");
   const router = useRouter();
   const { state, startGame, resetGame } = useGame();
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
 
-  async function copyCode() {
+  async function copyLink() {
+    const inviteUrl = new URL("/join", window.location.origin);
+    inviteUrl.searchParams.set("code", state.roomCode);
+
     try {
-      await navigator.clipboard.writeText(ROOM_CODE);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      await navigator.clipboard.writeText(inviteUrl.toString());
+      setCopyState("copied");
     } catch {
-      setCopied(false);
+      setCopyState("failed");
     }
+
+    window.setTimeout(() => setCopyState("idle"), 1800);
   }
 
   if (!state.joined) {
@@ -58,7 +65,7 @@ export default function LobbyPage() {
     <div className="flex min-h-dvh flex-col px-4 pb-8 pt-5">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          {t("room", { code: ROOM_CODE })}
+          {t("room", { code: state.roomCode })}
         </span>
         <LocaleSwitcher />
       </div>
@@ -69,34 +76,45 @@ export default function LobbyPage() {
       </div>
 
       <Card className="mt-5">
-        <CardContent className="flex items-center justify-between gap-3 p-4">
+        <CardContent className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {t("room", { code: ROOM_CODE })}
+              {t("room", { code: state.roomCode })}
             </p>
             <p className="mt-1 font-mono text-xl font-semibold tracking-[0.18em]">
-              {ROOM_CODE}
+              {state.roomCode}
             </p>
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant={copyState === "failed" ? "destructive" : "outline"}
             className="h-11 shrink-0 gap-2"
-            onClick={copyCode}
+            onClick={copyLink}
           >
-            {copied ? (
+            {copyState === "copied" ? (
               <Check className="size-4" />
+            ) : copyState === "failed" ? (
+              <CircleAlert className="size-4" />
             ) : (
               <Copy className="size-4" />
             )}
-            {copied ? t("copied") : t("copy")}
+            {copyState === "copied"
+              ? t("copied")
+              : copyState === "failed"
+                ? t("copyFailed")
+                : t("copy")}
           </Button>
         </CardContent>
       </Card>
 
+      <RoomConfigSummary className="mt-4" config={state.roomConfig} />
+
       <div className="mt-6 flex items-center justify-between">
         <h2 className="text-sm font-medium">
-          {t("players", { count: state.players.length, max: MAX_PLAYERS })}
+          {t("players", {
+            count: state.players.length,
+            max: state.roomConfig.playerCount,
+          })}
         </h2>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="size-1.5 rounded-full bg-emerald-400" />
@@ -117,9 +135,18 @@ export default function LobbyPage() {
             <span className="w-full truncate text-xs font-medium">
               {player.name}
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              {player.isYou ? common("you") : common("ready")}
-            </span>
+            {player.isYou && state.isHost ? (
+              <Badge
+                variant="outline"
+                className="h-4 px-1.5 text-[9px] uppercase tracking-wide text-faction-mafia"
+              >
+                {common("host")}
+              </Badge>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">
+                {player.isYou ? common("you") : common("ready")}
+              </span>
+            )}
           </div>
         ))}
       </div>

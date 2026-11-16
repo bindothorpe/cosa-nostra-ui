@@ -10,6 +10,7 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
   --color-faction-mafia: var(--faction-mafia);
   --color-faction-town: var(--faction-town);
   --color-faction-neutral: var(--faction-neutral);
@@ -142,6 +143,25 @@
     oklch(0.72 0.19 55 / 0.22) 42%,
     transparent 72%
   );
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.noir-atmosphere {
+  background-image:
+    radial-gradient(
+      ellipse 72% 54% at 50% -6%,
+      color-mix(in oklch, var(--faction-mafia) 24%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(
+      to bottom,
+      oklch(1 0 0 / 0.035) 0%,
+      transparent 42%
+    );
 }
 
 @layer base {

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  Geist,
+  Geist_Mono,
+} from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { GameProvider } from "@/components/game/game-provider";
@@ -15,6 +19,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -43,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-muted/40 text-foreground">

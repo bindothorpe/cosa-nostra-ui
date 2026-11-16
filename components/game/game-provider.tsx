@@ -13,12 +13,28 @@ import {
   BASE_VOTE_TALLY,
   BOT_READY_INTERVAL,
   INITIAL_STATE,
-  PHASE_DURATIONS,
   PLAYER_SEED,
+  playersForCount,
   ROLES,
   WHISPER_SEED,
 } from "./data";
-import type { GameState, Phase, Player, RoleDef } from "./types";
+import {
+  buildRoomConfig,
+  cloneRoomConfig,
+  DEFAULT_PHASE_DURATIONS,
+  DEFAULT_PLAYER_COUNT,
+  DEFAULT_ROOM_CONFIG,
+  defaultFactionCounts,
+  generateRoomCode,
+} from "./room-config";
+import type {
+  ConfigurablePhase,
+  GameState,
+  Phase,
+  Player,
+  RoleDef,
+  RoomConfig,
+} from "./types";
 
 interface GameContextValue {
   state: GameState;
@@ -29,7 +45,16 @@ interface GameContextValue {
   unreadAlerts: number;
   isReady: boolean;
   waitingCount: number;
-  join: (name: string) => void;
+  joinRoom: (params: {
+    code: string;
+    name: string;
+    allowComplexRoles: boolean;
+  }) => void;
+  createRoom: (params: {
+    name: string;
+    allowComplexRoles: boolean;
+    config: RoomConfig;
+  }) => void;
   startGame: () => void;
   markReady: () => void;
   unready: () => void;
@@ -49,15 +74,10 @@ interface GameContextValue {
 
 const GameContext = createContext<GameContextValue | null>(null);
 
-function freshPlayers(name: string): Player[] {
-  return PLAYER_SEED.map((player) =>
-    player.isYou ? { ...player, name } : { ...player },
-  );
-}
-
 function freshState(): GameState {
   return {
     ...INITIAL_STATE,
+    roomConfig: cloneRoomConfig(DEFAULT_ROOM_CONFIG),
     players: PLAYER_SEED.map((player) => ({ ...player })),
     whispers: WHISPER_SEED.map((thread) => ({
       ...thread,
@@ -81,7 +101,8 @@ function enterPhase(
   phase: Phase,
   extra: Partial<GameState> = {},
 ): GameState {
-  const duration = PHASE_DURATIONS[phase] ?? 0;
+  const duration =
+    state.roomConfig.phaseDurations[phase as ConfigurablePhase] ?? 0;
 
   return {
     ...state,
@@ -202,17 +223,67 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [state.phase, state.readyIds, state.players]);
 
-  const join = useCallback((name: string) => {
-    const trimmed = name.trim();
-    setState((current) => ({
-      ...current,
-      joined: true,
-      playerName: trimmed || current.playerName,
-      players: current.players.map((player) =>
-        player.isYou ? { ...player, name: trimmed || player.name } : player,
-      ),
-    }));
-  }, []);
+  const joinRoom = useCallback(
+    ({
+      code,
+      name,
+      allowComplexRoles,
+    }: {
+      code: string;
+      name: string;
+      allowComplexRoles: boolean;
+    }) => {
+      const trimmed = name.trim();
+
+      setState(() => {
+        const config = buildRoomConfig({
+          playerCount: DEFAULT_PLAYER_COUNT,
+          factionPreset: "default",
+          factionCounts: defaultFactionCounts(DEFAULT_PLAYER_COUNT),
+          timerPreset: "default",
+          phaseDurations: DEFAULT_PHASE_DURATIONS,
+        });
+
+        return {
+          ...freshState(),
+          joined: true,
+          playerName: trimmed,
+          roomCode: code.toUpperCase(),
+          isHost: false,
+          allowComplexRoles,
+          roomConfig: config,
+          players: playersForCount(DEFAULT_PLAYER_COUNT, trimmed),
+        };
+      });
+    },
+    [],
+  );
+
+  const createRoom = useCallback(
+    ({
+      name,
+      allowComplexRoles,
+      config,
+    }: {
+      name: string;
+      allowComplexRoles: boolean;
+      config: RoomConfig;
+    }) => {
+      const trimmed = name.trim();
+
+      setState(() => ({
+        ...freshState(),
+        joined: true,
+        playerName: trimmed,
+        roomCode: generateRoomCode(),
+        isHost: true,
+        allowComplexRoles,
+        roomConfig: cloneRoomConfig(config),
+        players: playersForCount(config.playerCount, trimmed),
+      }));
+    },
+    [],
+  );
 
   const startGame = useCallback(() => {
     setState((current) =>
@@ -221,7 +292,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ...freshState(),
           joined: current.joined,
           playerName: current.playerName,
-          players: freshPlayers(current.playerName),
+          roomCode: current.roomCode,
+          isHost: current.isHost,
+          allowComplexRoles: current.allowComplexRoles,
+          roomConfig: cloneRoomConfig(current.roomConfig),
+          players: playersForCount(
+            current.roomConfig.playerCount,
+            current.playerName,
+          ),
           round: 1,
         },
         "roleReveal",
@@ -293,12 +371,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetGame = useCallback(() => {
-    setState((current) => ({
-      ...freshState(),
-      joined: current.joined,
-      playerName: current.playerName,
-      players: freshPlayers(current.playerName),
-    }));
+    setState(() => freshState());
   }, []);
 
   const sendWhisper = useCallback((playerId: string, text: string) => {
@@ -461,7 +534,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unreadAlerts,
       isReady,
       waitingCount,
-      join,
+      joinRoom,
+      createRoom,
       startGame,
       markReady,
       unready,
@@ -487,7 +561,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unreadAlerts,
       isReady,
       waitingCount,
-      join,
+      joinRoom,
+      createRoom,
       startGame,
       markReady,
       unready,

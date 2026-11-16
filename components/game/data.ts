@@ -1,3 +1,8 @@
+import {
+  DEFAULT_ROOM_CONFIG,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+} from "./room-config";
 import type {
   Faction,
   GameAlert,
@@ -9,18 +14,26 @@ import type {
   WhisperThread,
 } from "./types";
 
-export const ROOM_CODE = "CNSA-7Q2";
-export const MAX_PLAYERS = 12;
+export const ROOM_CODE = "MAFIA";
+export { MAX_PLAYERS, MIN_PLAYERS };
 export const YOU_ID = "you";
 export const WHISPERS_PER_DAY = 3;
 
 export const ROLES: Record<RoleId, RoleDef> = {
-  godfather: { faction: "mafia", abilityPhase: "night" },
-  framer: { faction: "mafia", abilityPhase: "night" },
-  detective: { faction: "town", abilityPhase: "night" },
-  doctor: { faction: "town", abilityPhase: "night" },
-  villager: { faction: "town", abilityPhase: "passive" },
-  jester: { faction: "neutral", abilityPhase: "passive" },
+  godfather: {
+    faction: "mafia",
+    abilityPhase: "night",
+    complexity: "complex",
+  },
+  framer: { faction: "mafia", abilityPhase: "night", complexity: "complex" },
+  detective: {
+    faction: "town",
+    abilityPhase: "night",
+    complexity: "medium",
+  },
+  doctor: { faction: "town", abilityPhase: "night", complexity: "medium" },
+  villager: { faction: "town", abilityPhase: "passive", complexity: "simple" },
+  jester: { faction: "neutral", abilityPhase: "passive", complexity: "complex" },
 };
 
 export const PLAYER_SEED: Player[] = [
@@ -123,6 +136,37 @@ export const PLAYER_SEED: Player[] = [
   },
 ];
 
+const EXTRA_PLAYERS: Array<Pick<Player, "name" | "color">> = [
+  { name: "Nico", color: "bg-rose-500/15 text-rose-300" },
+  { name: "Rosa", color: "bg-sky-500/15 text-sky-300" },
+  { name: "Dante", color: "bg-amber-500/15 text-amber-300" },
+  { name: "Mila", color: "bg-emerald-500/15 text-emerald-300" },
+  { name: "Piero", color: "bg-violet-500/15 text-violet-300" },
+  { name: "Vittoria", color: "bg-orange-500/15 text-orange-300" },
+  { name: "Salvo", color: "bg-teal-500/15 text-teal-300" },
+  { name: "Nadia", color: "bg-fuchsia-500/15 text-fuchsia-300" },
+];
+
+export function playersForCount(count: number, name: string): Player[] {
+  const seats = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, count));
+  const seeded = PLAYER_SEED.slice(0, Math.min(seats, PLAYER_SEED.length)).map(
+    (player) =>
+      player.isYou ? { ...player, name: name.trim() || player.name } : { ...player },
+  );
+
+  const extraNeeded = Math.max(0, seats - seeded.length);
+  const extra = EXTRA_PLAYERS.slice(0, extraNeeded).map((player, index) => ({
+    id: `bot-${index + 1}`,
+    name: player.name,
+    roleId: "villager" as const,
+    faction: "town" as const,
+    alive: true,
+    color: player.color,
+  }));
+
+  return [...seeded, ...extra];
+}
+
 export const WHISPER_SEED: WhisperThread[] = [
   {
     playerId: "sofia",
@@ -220,15 +264,6 @@ export const BASE_VOTE_TALLY: Record<string, number> = {
 
 export const BOT_READY_INTERVAL = 280;
 
-export const PHASE_DURATIONS: Partial<Record<GameState["phase"], number>> = {
-  roleReveal: 60 * 1000,
-  night: 90 * 1000,
-  nightReport: 10 * 1000,
-  dayDiscussion: 5 * 60 * 1000,
-  voting: 60 * 1000,
-  voteResult: 10 * 1000,
-};
-
 export interface ActionSlotRule {
   allowedFactions?: Faction[];
   excludeSelf?: boolean;
@@ -296,6 +331,10 @@ export const INITIAL_STATE: GameState = {
   round: 1,
   joined: false,
   playerName: "Alessia",
+  roomCode: ROOM_CODE,
+  isHost: false,
+  allowComplexRoles: true,
+  roomConfig: DEFAULT_ROOM_CONFIG,
   players: PLAYER_SEED,
   actionTargets: [],
   actionDone: false,

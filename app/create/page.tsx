@@ -1,0 +1,297 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LocaleSwitcher } from "@/components/game/locale-switcher";
+import { useGame } from "@/components/game/game-provider";
+import {
+  buildRoomConfig,
+  DEFAULT_PHASE_DURATIONS,
+  DEFAULT_PLAYER_COUNT,
+  defaultFactionCounts,
+  factionTotal,
+  invalidPhaseDurations,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  validateFactionCounts,
+} from "@/components/game/room-config";
+import type {
+  FactionCounts,
+  PhaseDurations,
+  RoomPreset,
+} from "@/components/game/types";
+import { FactionDistribution } from "@/components/room/faction-distribution";
+import { IdentityFields } from "@/components/room/identity-fields";
+import { NumberStepper } from "@/components/room/number-stepper";
+import { PhaseTimers } from "@/components/room/phase-timers";
+import { RoomConfigSummary } from "@/components/room/room-config-summary";
+import { WizardProgress } from "@/components/room/wizard-progress";
+
+const STEP_KEYS = ["table", "timers", "identity"] as const;
+
+export default function CreateRoomPage() {
+  const t = useTranslations("CreateRoom");
+  const identityT = useTranslations("Identity");
+  const router = useRouter();
+  const { createRoom } = useGame();
+
+  const [step, setStep] = useState(0);
+  const [playerCount, setPlayerCount] = useState(DEFAULT_PLAYER_COUNT);
+  const [factionPreset, setFactionPreset] = useState<RoomPreset>("default");
+  const [customFactions, setCustomFactions] = useState<FactionCounts>(() =>
+    defaultFactionCounts(DEFAULT_PLAYER_COUNT),
+  );
+  const [timerPreset, setTimerPreset] = useState<RoomPreset>("default");
+  const [customTimers, setCustomTimers] = useState<PhaseDurations>(() => ({
+    ...DEFAULT_PHASE_DURATIONS,
+  }));
+  const [name, setName] = useState("");
+  const [allowComplexRoles, setAllowComplexRoles] = useState(true);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const factions =
+    factionPreset === "default"
+      ? defaultFactionCounts(playerCount)
+      : customFactions;
+  const factionErrors =
+    factionPreset === "custom"
+      ? validateFactionCounts(customFactions, playerCount)
+      : [];
+  const timerErrors =
+    timerPreset === "custom" ? invalidPhaseDurations(customTimers) : [];
+  const canAdvance =
+    step === 0
+      ? factionErrors.length === 0
+      : step === 1
+        ? timerErrors.length === 0
+        : true;
+  const stepCopy = STEP_KEYS[step];
+
+  function changeFactionPreset(next: RoomPreset) {
+    if (next === "custom" && factionTotal(customFactions) !== playerCount) {
+      setCustomFactions(defaultFactionCounts(playerCount));
+    }
+    setFactionPreset(next);
+  }
+
+  function updatePhaseDuration(
+    phase: keyof PhaseDurations,
+    durationMs: number,
+  ) {
+    setCustomTimers((current) => ({ ...current, [phase]: durationMs }));
+  }
+
+  function handlePrimary() {
+    if (step < STEP_KEYS.length - 1) {
+      if (!canAdvance) return;
+      setStep((current) => current + 1);
+      return;
+    }
+
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNameError(identityT("nameRequired"));
+      return;
+    }
+    if (trimmed.length > 20) {
+      setNameError(identityT("nameTooLong"));
+      return;
+    }
+
+    setNameError(null);
+    const config = buildRoomConfig({
+      playerCount,
+      factionPreset,
+      factionCounts: customFactions,
+      timerPreset,
+      phaseDurations: customTimers,
+    });
+
+    createRoom({ name: trimmed, allowComplexRoles, config });
+    router.push("/lobby");
+  }
+
+  return (
+    <div className="relative isolate flex min-h-dvh flex-col overflow-x-clip px-4 pb-8 pt-5">
+      <div
+        aria-hidden
+        className="noir-atmosphere pointer-events-none absolute inset-x-0 top-0 -z-10 h-96"
+      />
+
+      <header>
+        <div className="flex items-center justify-between gap-3">
+          {step === 0 ? (
+            <Link
+              href="/"
+              aria-label={t("back")}
+              className="grid size-11 place-items-center rounded-full border bg-card/60 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={t("back")}
+              className="size-11 rounded-full bg-card/60"
+              onClick={() => setStep((current) => current - 1)}
+            >
+              <ArrowLeft />
+            </Button>
+          )}
+          <LocaleSwitcher />
+        </div>
+
+        <div className="mt-5">
+          <WizardProgress
+            steps={STEP_KEYS.map((key) => t(`steps.${key}`))}
+            current={step}
+          />
+        </div>
+
+        <div className="mt-6">
+          <h1 className="font-display text-4xl leading-none tracking-tight">
+            {t(`stepCopy.${stepCopy}.title`)}
+          </h1>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            {t(`stepCopy.${stepCopy}.subtitle`)}
+          </p>
+        </div>
+      </header>
+
+      <main className="mt-5 flex-1">
+        {step === 0 ? (
+          <div className="space-y-11">
+            <Card className="border-border/80 bg-card/70 backdrop-blur">
+              <CardContent>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-medium">{t("playersTitle")}</h2>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                      {t("playersHint", {
+                        min: MIN_PLAYERS,
+                        max: MAX_PLAYERS,
+                      })}
+                    </p>
+                  </div>
+                  <NumberStepper
+                    value={playerCount}
+                    min={MIN_PLAYERS}
+                    max={MAX_PLAYERS}
+                    onChange={setPlayerCount}
+                    decreaseLabel={t("decreasePlayers")}
+                    increaseLabel={t("increasePlayers")}
+                    valueClassName="min-w-14 text-3xl"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <section className="flex flex-col gap-4">
+              <div className="space-y-2">
+                <h2 className="font-heading text-base leading-snug font-medium">
+                  {t("factionTitle")}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t("factionHint")}
+                </p>
+              </div>
+              <FactionDistribution
+                preset={factionPreset}
+                onPresetChange={changeFactionPreset}
+                playerCount={playerCount}
+                counts={factions}
+                onCountsChange={setCustomFactions}
+                errors={factionErrors}
+              />
+            </section>
+          </div>
+        ) : null}
+
+        {step === 1 ? (
+          <section className="mt-8 flex flex-col gap-4">
+            <div className="space-y-2">
+              <h2 className="font-heading text-base leading-snug font-medium">
+                {t("timersTitle")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("timersHint")}
+              </p>
+            </div>
+            <PhaseTimers
+              preset={timerPreset}
+              onPresetChange={setTimerPreset}
+              durations={
+                timerPreset === "default"
+                  ? DEFAULT_PHASE_DURATIONS
+                  : customTimers
+              }
+              onChange={updatePhaseDuration}
+            />
+          </section>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="space-y-10">
+            <Card className="border-border/80 bg-card/70 backdrop-blur">
+              <CardHeader>
+                <CardTitle>{t("identityTitle")}</CardTitle>
+                <CardDescription>{t("identityHint")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <IdentityFields
+                  idPrefix="create"
+                  name={name}
+                  onNameChange={(value) => {
+                    setName(value);
+                    setNameError(null);
+                  }}
+                  allowComplexRoles={allowComplexRoles}
+                  onAllowComplexRolesChange={setAllowComplexRoles}
+                  nameError={nameError}
+                />
+              </CardContent>
+            </Card>
+
+            <RoomConfigSummary
+              config={buildRoomConfig({
+                playerCount,
+                factionPreset,
+                factionCounts: customFactions,
+                timerPreset,
+                phaseDurations: customTimers,
+              })}
+            />
+          </div>
+        ) : null}
+      </main>
+
+      <footer className="mt-5 space-y-2">
+        <Button
+          type="button"
+          className="h-12 w-full gap-2 text-sm"
+          disabled={!canAdvance}
+          onClick={handlePrimary}
+        >
+          {step === STEP_KEYS.length - 1 ? t("create") : t("next")}
+          <ArrowRight className="size-4" />
+        </Button>
+        <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+          {step === STEP_KEYS.length - 1 ? t("createHint") : t("stepHint")}
+        </p>
+      </footer>
+    </div>
+  );
+}

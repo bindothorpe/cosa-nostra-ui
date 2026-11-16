@@ -19,9 +19,109 @@
     "waitingFor": "Waiting for {count, plural, =1 {1 player} other {# players}}.",
     "allReady": "All players ready."
   },
+  "Landing": {
+    "table": "Tonight's table",
+    "title": "Cosa Nostra",
+    "subtitle": "A game of whispers, lies, and survival. One phone each. One seat at the table.",
+    "joinLabel": "Room code",
+    "codePlaceholder": "ABCDE",
+    "join": "Join",
+    "joinHint": "Ask the host for the five-letter invitation code.",
+    "codeErrors": {
+      "empty": "Enter a room code.",
+      "length": "Room codes are exactly 5 letters."
+    },
+    "or": "or",
+    "create": "Create room",
+    "createHint": "Set the seats, factions, and phase timers"
+  },
+  "Identity": {
+    "name": "Player name",
+    "namePlaceholder": "e.g. Alessia",
+    "nameRequired": "Enter a name to take a seat.",
+    "nameTooLong": "Keep your name to 20 characters or fewer.",
+    "roleLabel": "Comfortable with a complicated role",
+    "roleHint": "Leave this off if you want a simpler role while you learn the table."
+  },
+  "JoinRoom": {
+    "eyebrow": "Invitation",
+    "title": "Join the table",
+    "subtitle": "One code, one seat. No account needed.",
+    "codeLabel": "Your room code",
+    "join": "Take a seat",
+    "back": "Back to the table",
+    "invalidTitle": "That code doesn't look right",
+    "invalidBody": "Room codes are exactly 5 letters. Go back and try again."
+  },
+  "CreateRoom": {
+    "steps": {
+      "table": "Table",
+      "timers": "Timers",
+      "identity": "You"
+    },
+    "stepCopy": {
+      "table": {
+        "title": "Set the table",
+        "subtitle": "Choose how many seats, and how the factions split."
+      },
+      "timers": {
+        "title": "Set the pace",
+        "subtitle": "Keep the default rhythm or give each phase its own duration."
+      },
+      "identity": {
+        "title": "Take the head seat",
+        "subtitle": "Name yourself and choose what kind of role you want."
+      }
+    },
+    "playersTitle": "Seats at the table",
+    "playersHint": "{min} to {max} players. The room is built for this many seats.",
+    "decreasePlayers": "One fewer seat",
+    "increasePlayers": "One more seat",
+    "factionTitle": "Faction distribution",
+    "factionHint": "Default keeps the table balanced. Custom lets you set every faction total.",
+    "default": "Default",
+    "custom": "Custom",
+    "total": "Total",
+    "rolesPreview": "Roles in play",
+    "decreaseFaction": "One fewer {faction}",
+    "increaseFaction": "One more {faction}",
+    "errors": {
+      "sum": "Faction totals must add up to {count}.",
+      "mafia": "At least one Mafia seat is required.",
+      "town": "At least one Town seat is required.",
+      "neutral": "At most one Neutral seat is allowed."
+    },
+    "timersTitle": "Phase timers",
+    "timersHint": "Default keeps the game moving. Custom gives you exact control.",
+    "seconds": "sec",
+    "timerRange": "Use a duration between {min} and {max} seconds.",
+    "identityTitle": "Who is hosting?",
+    "identityHint": "This name sits at the head of the table.",
+    "create": "Create room",
+    "next": "Continue",
+    "back": "Back",
+    "createHint": "A five-letter code is generated when the room is created.",
+    "stepHint": "Your choices become the room setup."
+  },
+  "RoomConfig": {
+    "title": "Room setup",
+    "seats": "{count} seats",
+    "factions": "Factions",
+    "timers": "Timers",
+    "default": "Default",
+    "custom": "Custom",
+    "phases": {
+      "roleReveal": "Role reveal",
+      "night": "Night",
+      "nightReport": "Night report",
+      "dayDiscussion": "Day discussion",
+      "voting": "Voting",
+      "voteResult": "Vote result"
+    }
+  },
   "Join": {
     "title": "Cosa Nostra",
-    "subtitle": "A game of whispers, lies, and survival. One phone each. Twelve seats at the table.",
+    "subtitle": "A game of whispers, lies, and survival. One phone each. One seat at the table.",
     "roomCode": "Room code",
     "name": "Your name",
     "namePlaceholder": "e.g. Alessia",
@@ -35,8 +135,9 @@
     "title": "Waiting for the table",
     "subtitle": "The game starts when everyone is seated.",
     "players": "{count} of {max} players",
-    "copy": "Copy code",
+    "copy": "Copy link",
     "copied": "Copied",
+    "copyFailed": "Copy failed",
     "start": "Start game",
     "hint": "In the real game the host starts the round.",
     "leave": "Leave table",
