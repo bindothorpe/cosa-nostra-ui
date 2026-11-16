@@ -25,14 +25,13 @@ export function RolePeekButton() {
         render={
           <Button
             type="button"
-            variant="outline"
             size="icon"
-            className="size-11"
+            className="size-11 rounded-full bg-card hover:bg-primary/20"
             aria-label={t("peek")}
           />
         }
       >
-        <Eye className="size-5" />
+        <Eye className="size-5 text-primary" />
       </DialogTrigger>
       <DialogContent className="max-h-[85dvh] max-w-sm overflow-y-auto">
         <DialogHeader>

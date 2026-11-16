@@ -33,7 +33,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
       aria-label={t("switch")}
       aria-busy={pending}
       className={cn(
-        "flex items-center gap-0.5 rounded-full border bg-card px-0.5 py-0",
+        "flex items-center gap-0.5 rounded-full border bg-card px-0 py-0",
         className,
       )}
     >

@@ -100,14 +100,18 @@ function CodexRoleAccordion() {
   const { state } = useGame();
 
   return (
-    <Accordion multiple className="rounded-xl border bg-card px-4">
+    <Accordion multiple className="flex flex-col gap-2">
       {ROLE_IDS.map((id) => {
         const count = state.players.filter(
           (player) => player.roleId === id,
         ).length;
 
         return (
-          <AccordionItem key={id} value={id}>
+          <AccordionItem
+            key={id}
+            value={id}
+            className="overflow-hidden rounded-xl border bg-card px-4 not-last:border-b-0"
+          >
             <AccordionTrigger className="py-3">
               <span className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-1">
                 <span className="min-w-0">
