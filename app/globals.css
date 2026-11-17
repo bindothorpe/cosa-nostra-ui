@@ -140,7 +140,7 @@
   background-image: radial-gradient(
     circle 380px at 50% 0%,
     oklch(0.86 0.17 85 / 0.46) 0%,
-    oklch(0.72 0.19 55 / 0.22) 42%,
+    oklch(72.032% 0.18474 52.178 / 0.22) 42%,
     transparent 72%
   );
 }

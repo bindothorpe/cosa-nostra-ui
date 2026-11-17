@@ -31,6 +31,9 @@ export const metadata: Metadata = {
   title: "Cosa Nostra — Table Companion",
   description:
     "A mobile-first mock UI for the Cosa Nostra social deduction game.",
+  appleWebApp: {
+    title: "Cosa Nostra",
+  },
 };
 
 async function IntlShell({ children }: { children: React.ReactNode }) {
