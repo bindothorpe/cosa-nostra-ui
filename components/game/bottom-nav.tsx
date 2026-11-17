@@ -7,6 +7,8 @@ import { Bell, BookOpen, MessageSquare, Shield, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGame } from "./game-provider";
 
+const IS_LIVE = process.env.NEXT_PUBLIC_GAME_MODE === "live";
+
 export function BottomNav() {
   const t = useTranslations("Nav");
   const pathname = usePathname();
@@ -22,7 +24,10 @@ export function BottomNav() {
     },
     { href: "/alerts", label: t("alerts"), icon: Bell, badge: unreadAlerts },
     { href: "/codex", label: t("codex"), icon: BookOpen, badge: 0 },
-    { href: "/admin", label: t("admin"), icon: Shield, badge: 0 },
+    // Admin controls are mock-only; the live server owns room state.
+    ...(IS_LIVE
+      ? []
+      : [{ href: "/admin", label: t("admin"), icon: Shield, badge: 0 }]),
   ];
 
   return (
@@ -30,7 +35,7 @@ export function BottomNav() {
       aria-label={t("table")}
       className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md border-t bg-background/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80"
     >
-      <div className="grid grid-cols-5">
+      <div className={cn("grid", IS_LIVE ? "grid-cols-4" : "grid-cols-5")}>
         {items.map((item) => {
           const active =
             pathname === item.href ||

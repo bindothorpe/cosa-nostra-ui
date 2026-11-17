@@ -1121,7 +1121,13 @@ function handleSendWhisper(
   command: Extract<Command, { type: "sendWhisper" }>,
   now: number,
 ): EngineError | null {
-  if (state.phase !== "dayDiscussion") {
+  if (
+    state.phase !== "night" &&
+    state.phase !== "nightReport" &&
+    state.phase !== "dayDiscussion" &&
+    state.phase !== "voting" &&
+    state.phase !== "voteResult"
+  ) {
     return engineError("WRONG_PHASE", "Errors.wrongPhase", {
       phase: state.phase,
     });

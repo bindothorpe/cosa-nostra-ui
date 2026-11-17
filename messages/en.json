@@ -347,7 +347,7 @@
     "empty": "No whispers yet. Start one with a player at the table.",
     "new": "New whisper",
     "newTitle": "Whisper someone",
-    "newHint": "Pick a player. Only the two of you will see it.",
+    "newHint": "No chats with {name} yet.",
     "send": "Send",
     "placeholder": "Write a whisper…",
     "limitReached": "You have used all whispers for today.",

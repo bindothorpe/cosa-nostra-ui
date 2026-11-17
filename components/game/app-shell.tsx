@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Drama } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BottomNav } from "./bottom-nav";
 import { useGame } from "./game-provider";
 import { RequireJoined } from "./require-joined";
@@ -14,8 +16,12 @@ import { usePhaseLabel } from "./use-phase-label";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
+  const pathname = usePathname();
   const { state } = useGame();
   const phaseLabel = usePhaseLabel(state.phase, state.round);
+  // Chat threads manage their own viewport-height column: messages scroll
+  // internally and the composer sits directly above the bottom nav.
+  const isChatThread = /^\/whispers\/[^/]+\/?$/.test(pathname);
 
   return (
     <RequireJoined>
@@ -40,7 +46,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-4 pb-28 pt-4">
+        <main
+          className={cn(
+            "px-4",
+            isChatThread
+              ? "flex min-h-0 flex-1 flex-col pt-3 pb-0"
+              : "flex-1 pt-4 pb-28",
+          )}
+        >
           <ConnectionBanner />
           {children}
         </main>

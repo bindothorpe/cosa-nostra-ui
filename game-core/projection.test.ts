@@ -304,10 +304,10 @@ describe("whisper projection and budget", () => {
     expect(project(state, "p1", NOW + 11_000).whispersLeft).toBe(2);
   });
 
-  it("rejects whispers to the dead and outside the day phase", () => {
-    const voting = toVoting(startedRoom(8));
+  it("rejects whispers before the game starts and to the dead", () => {
+    const roleReveal = startedRoom(8);
     const result = reduce(
-      voting,
+      roleReveal,
       "p1",
       { type: "sendWhisper", toPlayerId: "p2", text: "hello" },
       NOW + 1_000,

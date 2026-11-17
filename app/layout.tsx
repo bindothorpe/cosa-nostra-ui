@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import {
   Cormorant_Garamond,
@@ -26,6 +26,12 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["500", "600"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   title: "Cosa Nostra — Table Companion",

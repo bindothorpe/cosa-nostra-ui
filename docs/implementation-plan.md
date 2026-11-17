@@ -88,7 +88,7 @@ This document defines the data, actions, and transitions those screens must use.
 | Role setup | Room creation chooses Default (config table per player count) or Custom (validated counts) |
 | Rules setup | Room creation chooses Default (current values) or Custom (timers, whisper budget, tie rule) |
 | Dead players | Spectators; graveyard chat; cannot vote/act/whisper living players; other roles hidden |
-| Whispers | Private 1:1; default 3 per day; budget configurable; resets each day |
+| Whispers | Private 1:1; allowed in every phase after role reveal; default 3 per day; budget configurable; resets each day |
 | Vote tie | Default: no elimination; configurable |
 | Mid-game joins | Rejected; reconnect only |
 | Disconnect | Seat held for the whole game; timeout fallback keeps the game moving |

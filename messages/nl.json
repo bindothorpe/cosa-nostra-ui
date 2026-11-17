@@ -347,7 +347,7 @@
     "empty": "Nog geen fluisters. Begin er een met een speler aan tafel.",
     "new": "Nieuwe fluister",
     "newTitle": "Fluister met iemand",
-    "newHint": "Kies een speler. Alleen jullie twee zien het.",
+    "newHint": "Nog geen gesprek met {name}.",
     "send": "Verstuur",
     "placeholder": "Schrijf een fluister…",
     "limitReached": "Je hebt al je fluisters vandaag gebruikt.",

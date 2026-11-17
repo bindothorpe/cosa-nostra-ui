@@ -367,3 +367,63 @@ describe("ready semantics", () => {
     expect(state.phase).toBe("dayDiscussion");
   });
 });
+
+describe("whisper phases", () => {
+  it("allows whispers in every in-game phase after role reveal", () => {
+    const roleReveal = startedRoom(8);
+    const early = reduce(
+      roleReveal,
+      "p1",
+      { type: "sendWhisper", toPlayerId: "p2", text: "Psst." },
+      NOW + 1,
+    );
+    expect(early.ok).toBe(false);
+    if (!early.ok) {
+      expect(early.error.code).toBe("WRONG_PHASE");
+    }
+
+    const night = advancePhase(roleReveal, NOW + 1_000);
+    const nightReport = advancePhase(night, NOW + 2_000);
+    const dayDiscussion = advancePhase(nightReport, NOW + 3_000);
+    const voting = advancePhase(dayDiscussion, NOW + 4_000);
+    const voteResult = advancePhase(voting, NOW + 5_000);
+
+    const phases: Array<[string, RoomState]> = [
+      ["night", night],
+      ["nightReport", nightReport],
+      ["dayDiscussion", dayDiscussion],
+      ["voting", voting],
+      ["voteResult", voteResult],
+    ];
+
+    for (const [phase, room] of phases) {
+      expect(room.phase).toBe(phase);
+      const sent = run(
+        room,
+        "p1",
+        {
+          type: "sendWhisper",
+          toPlayerId: "p2",
+          text: "Meet me at the docks.",
+        },
+        NOW + 6_000,
+      );
+      expect(sent.phase).toBe(phase);
+      expect(sent.whispers).toHaveLength(1);
+      expect(sent.whispers[0].messages).toHaveLength(1);
+      expect(sent.whispersSentThisDay.p1).toBe(1);
+    }
+
+    const lobby = makeRoom(8);
+    const lobbyResult = reduce(
+      lobby,
+      "p1",
+      { type: "sendWhisper", toPlayerId: "p2", text: "Psst." },
+      NOW + 7_000,
+    );
+    expect(lobbyResult.ok).toBe(false);
+    if (!lobbyResult.ok) {
+      expect(lobbyResult.error.code).toBe("WRONG_PHASE");
+    }
+  });
+});
