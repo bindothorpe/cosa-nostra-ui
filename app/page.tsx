@@ -26,6 +26,8 @@ import { joinFailureFrom } from "@/components/room/join-error";
 import type { Phase } from "@/game-core/types";
 import { cn } from "@/lib/utils";
 
+// Test
+
 const IS_LIVE = process.env.NEXT_PUBLIC_GAME_MODE === "live";
 
 const ACTIVE_PHASES = new Set<Phase>([
