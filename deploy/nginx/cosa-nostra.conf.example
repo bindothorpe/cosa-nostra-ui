@@ -33,7 +33,7 @@ server {
     server_name cosa-nostra.bindothorpe.com;
 
     ssl_certificate     /etc/letsencrypt/live/cosa-nostra.bindothorpe.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/cosa-nostra.bindthorpe.com/privkey.pem;
+    ssl_certificate_key /etc/letsencrypt/live/cosa-nostra.bindothorpe.com/privkey.pem;
 
     client_max_body_size 64k;
 

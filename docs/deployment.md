@@ -9,6 +9,70 @@ Coolify can deploy it directly from a Git repository with `compose.yaml` as the
 compose file. You do **not** need a separate database, Redis, or managed realtime
 service.
 
+## Where resources actually run
+
+Coolify separates the **control plane** from **target servers**:
+
+- The Coolify instance (often shown as server `localhost`) stores metadata: projects,
+  environment variables, deployment history, and configuration.
+- A resource runs on the **server selected when the resource is created/deployed**.
+  That target server runs the Docker containers, images, networks, and named volumes.
+- Each target server needs its own proxy configuration (Coolify-managed Traefik/Caddy,
+  or Custom/nginx). Domains must be configured on the server hosting the resource.
+- Volumes do not move automatically between servers. Moving a resource to another server
+  requires migrating its data volume separately.
+- The control plane needs SSH access to the target. If the target is offline or its
+  Docker daemon is unavailable, deployments fail.
+
+For this project, open the Compose resource in Coolify and check its **Server**. On that
+server’s Terminal:
+
+```bash
+docker ps
+docker volume ls
+```
+
+The `web`, `realtime`, and `room-data` volume should be there. They will not appear on a
+server where the resource was not deployed.
+
+## Choosing the ingress topology
+
+Only one process can own ports 80/443. Pick one:
+
+| Situation | Recommendation |
+|---|---|
+| Dedicated VPS for Coolify | Let Coolify own 80/443 with Traefik/Caddy. Domains, TLS, and previews are automatic. Cleanest long-term. |
+| Shared server with an existing nginx serving other sites | Keep nginx. Set Coolify proxy type to **Custom**, expose the app on loopback ports, and add one nginx server block. |
+| A few apps on a shared server | nginx front door is fine. Keep per-app configs in version control and automate cert renewal. |
+| Many Coolify apps / preview deployments expected | Move Coolify to its own VPS/VM with 80/443 free. Manual nginx routing becomes the bottleneck. |
+| No public ports available | Cloudflare Tunnel from the Coolify host. |
+
+Do not run two proxies on the same ports. If nginx already owns 80/443, Coolify’s
+Traefik cannot bind and Coolify domain settings will not create routes.
+
+### Coolify control plane and apps on one server
+
+Co-locating Coolify with the apps is normal and fine for a small deployment. The
+control plane is lightweight; app containers share the server’s Docker daemon,
+CPU, RAM, disk, and network.
+
+Use one server when:
+
+- one or a few low-traffic apps
+- hobby/personal use
+- you want simple networking and one backup target
+
+Split control plane and app servers when:
+
+- apps are critical or need independent failure domains
+- multiple teams/customers need isolation
+- apps are resource-heavy or need per-app limits
+- security/compliance requires separation
+- the control plane must survive an app-server outage
+
+Either way, one process must own 80/443 on each public server. Mixing host nginx
+and Coolify’s Traefik on the same ports is the problem to avoid.
+
 ---
 
 ## 1. Prerequisites
@@ -100,10 +164,10 @@ Then:
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
-sudo certbot --nginx -d cosa-nostra.bindthorpe.com
+sudo certbot --nginx -d cosa-nostra.bindothorpe.com
 ```
 
-Set `ALLOWED_ORIGINS=https://cosa-nostra.bindthorpe.com` and redeploy.
+Set `ALLOWED_ORIGINS=https://cosa-nostra.bindothorpe.com` and redeploy.
 
 Coolify’s domain fields do **not** configure an external nginx. The hostname and
 port mapping live in nginx; the Coolify domain entry is informational in Custom
@@ -310,6 +374,7 @@ Rollback:
 | Timeout on a real domain | DNS A/AAAA → VPS public IP; ports 80/443 open in the provider firewall and `ufw`; Coolify proxy container running |
 | Browser URL ends in `:3000` | Wrong. `:3000` in the Coolify domain field is the **internal** container port; browse `https://game.example.com` |
 | TLS cert name mismatch | Coolify still has the old domain or no router/cert for this hostname; update the web domain, enable HTTPS, redeploy, then check ACME logs |
+| ACME `NXDOMAIN` for `www.example.com` | Coolify’s WWW redirect is requesting a cert for a name with no DNS record. Disable the WWW redirect or add the `www` A/CNAME record |
 | `curl` shows `Server: nginx/...`, a default page, or another site’s cert | DNS points at a different server, or host nginx owns 80/443. Confirm the Coolify VPS public IP; check `ss -ltnp` and `docker ps` |
 | Web loads, socket fails | `ALLOWED_ORIGINS`, `/rt/ws` routing, TLS/WSS, proxy upgrade support |
 | 503 from Coolify | Domain attached to wrong service or wrong internal port |
