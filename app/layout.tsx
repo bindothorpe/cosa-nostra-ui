@@ -31,6 +31,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
+  themeColor: "#0a0a0a",
+  colorScheme: "dark",
 };
 
 export const metadata: Metadata = {
@@ -39,6 +41,7 @@ export const metadata: Metadata = {
     "A mobile-first mock UI for the Cosa Nostra social deduction game.",
   appleWebApp: {
     title: "Cosa Nostra",
+    statusBarStyle: "black",
   },
 };
 
@@ -49,7 +52,7 @@ async function IntlShell({ children }: { children: React.ReactNode }) {
     <NextIntlClientProvider>
       <div
         lang={locale}
-        className="relative isolate mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip border-x bg-background"
+        className="relative isolate mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip bg-background"
       >
         <PhaseGlow />
         {children}
@@ -65,11 +68,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-dvh bg-muted/40 text-foreground">
+      <body className="min-h-dvh bg-background text-foreground">
         <GameProvider>
           <Suspense
             fallback={
-              <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x bg-background" />
+              <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background" />
             }
           >
             <IntlShell>{children}</IntlShell>

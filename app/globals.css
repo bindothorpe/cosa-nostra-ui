@@ -172,7 +172,8 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    @apply bg-background font-sans;
+    color-scheme: dark;
     -webkit-tap-highlight-color: transparent;
   }
   body {
