@@ -41,3 +41,13 @@ export interface HealthInfo {
   uptimeSeconds: number;
   version: string;
 }
+
+export interface BugReport {
+  id: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface BugListResponse {
+  bugs: BugReport[];
+}

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowRight, Drama, Hash, LoaderCircle, Play } from "lucide-react";
+import { ArrowRight, Drama, Hash, LoaderCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,6 +15,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { LocaleSwitcher } from "@/components/game/locale-switcher";
+import { BugReportFab } from "@/components/bugs/bug-report-fab";
 import { ApiError, checkRoom } from "@/components/room/api";
 import {
   clearLastRoom,
@@ -233,7 +234,7 @@ function LandingContent() {
   }
 
   return (
-    <div className="relative isolate flex min-h-dvh flex-col overflow-x-clip px-4 pb-6 pt-5">
+    <div className="relative isolate flex min-h-dvh flex-col overflow-x-clip px-4 pb-24 pt-5">
       <div
         aria-hidden
         className="noir-atmosphere pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem]"
@@ -366,6 +367,8 @@ function LandingContent() {
           </Link>
         </div>
       </main>
+
+      <BugReportFab />
     </div>
   );
 }

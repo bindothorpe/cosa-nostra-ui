@@ -507,6 +507,27 @@
     "roster": "Still at the table",
     "deadNote": "Your whispers are read-only now."
   },
+  "Bugs": {
+    "open": "Report a bug",
+    "title": "Report a bug",
+    "description": "Found something broken? Tell us what happened.",
+    "messageLabel": "What went wrong?",
+    "placeholder": "Describe the bug…",
+    "charCount": "{count}/{max}",
+    "submit": "Send report",
+    "submitting": "Sending…",
+    "success": "Thanks — your report was submitted.",
+    "error": "Couldn't send your report. Try again.",
+    "rateLimited": "Too many reports. Wait a minute and try again.",
+    "hint": "Reports are stored without your name or account.",
+    "pageTitle": "Bug reports",
+    "pageSubtitle": "Everything submitted from the landing screen.",
+    "back": "Back to the table",
+    "loading": "Loading reports…",
+    "empty": "No bug reports yet.",
+    "loadError": "Couldn't load reports. Try again.",
+    "retry": "Retry"
+  },
   "Locale": {
     "switch": "Switch language",
     "en": "EN",

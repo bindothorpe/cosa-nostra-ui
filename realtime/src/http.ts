@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 import type {
+  BugReport,
   CheckRoomRequest,
   CreateRoomRequest,
   HealthInfo,
@@ -20,8 +21,14 @@ export interface RoomApi {
   health(): HealthInfo;
 }
 
+export interface BugApi {
+  add(message: string): Promise<BugReport>;
+  list(): BugReport[];
+}
+
 export interface HttpDeps {
   api: RoomApi;
+  bugs: BugApi;
   env: Env;
   logger: Logger;
   version: string;
@@ -39,6 +46,10 @@ const JoinSchema = z.object({
 
 const CheckSchema = z.object({
   token: z.string().min(1).max(512).optional(),
+});
+
+const BugSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
 });
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -140,6 +151,7 @@ export function createHttpHandler(deps: HttpDeps) {
   const createLimiter = new FixedWindowLimiter(5, 60 * 60_000);
   const joinLimiter = new FixedWindowLimiter(10, 60_000);
   const checkLimiter = new FixedWindowLimiter(30, 60_000);
+  const bugLimiter = new FixedWindowLimiter(5, 60_000);
 
   return async function handleRequest(
     request: IncomingMessage,
@@ -167,6 +179,31 @@ export function createHttpHandler(deps: HttpDeps) {
     try {
       if (pathname === "/health" && request.method === "GET") {
         sendJson(response, 200, deps.api.health(), origin);
+        return;
+      }
+
+      if (pathname === "/bugs" && request.method === "GET") {
+        sendJson(response, 200, { bugs: deps.bugs.list() }, origin);
+        return;
+      }
+
+      if (pathname === "/bugs" && request.method === "POST") {
+        if (!allowed) {
+          throw forbidden("ORIGIN_NOT_ALLOWED", "Errors.originNotAllowed");
+        }
+
+        const ip = clientIp(request, deps.env.trustProxy);
+        if (!bugLimiter.allow(ip)) {
+          throw tooManyRequests("BUG_RATE_LIMIT", "Errors.rateLimit");
+        }
+
+        const parsed = BugSchema.safeParse(await readJson(request));
+        if (!parsed.success) {
+          throw new RealtimeError(400, "INVALID_BODY", "Errors.invalidBody");
+        }
+
+        const report = await deps.bugs.add(parsed.data.message);
+        sendJson(response, 201, report, origin);
         return;
       }
 

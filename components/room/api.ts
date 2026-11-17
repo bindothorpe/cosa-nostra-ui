@@ -108,3 +108,23 @@ export function checkRoom(
     body: JSON.stringify({ token: token ?? undefined }),
   });
 }
+
+export interface BugReport {
+  id: string;
+  message: string;
+  createdAt: string;
+}
+
+export function reportBug(message: string): Promise<BugReport> {
+  return request<BugReport>("/bugs", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function listBugs(): Promise<BugReport[]> {
+  const response = await request<{ bugs: BugReport[] }>("/bugs", {
+    method: "GET",
+  });
+  return response.bugs;
+}

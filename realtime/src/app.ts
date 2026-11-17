@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 import { attachConnection } from "./connection";
+import { BugStore } from "./bug-store";
 import type { Env } from "./env";
 import { canonicalPath, createHttpHandler } from "./http";
 import { createLogger, type Logger } from "./logger";
@@ -33,12 +34,14 @@ export async function startServer({
   logger = createLogger(env.logLevel),
 }: StartServerOptions): Promise<RunningServer> {
   const store = new SnapshotStore(env.dataDir, logger);
+  const bugs = new BugStore(env.dataDir, logger);
   const registry = new RoomRegistry(env, store, logger, version);
 
-  await registry.init();
+  await Promise.all([registry.init(), bugs.init()]);
 
   const httpHandler = createHttpHandler({
     api: registry,
+    bugs,
     env,
     logger,
     version,
