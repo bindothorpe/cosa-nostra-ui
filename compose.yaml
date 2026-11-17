@@ -20,6 +20,10 @@ services:
         NEXT_PUBLIC_REALTIME_BASE: ${NEXT_PUBLIC_REALTIME_BASE:-}
     expose:
       - "3000"
+    # Loopback only, for a host reverse proxy (nginx/caddy) on the same VPS.
+    # Not publicly reachable; Coolify/Traefik can still use the Docker network.
+    ports:
+      - "127.0.0.1:3000:3000"
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -38,6 +42,9 @@ services:
       dockerfile: realtime/Dockerfile
     expose:
       - "3001"
+    # Loopback only, for a host reverse proxy (nginx/caddy) on the same VPS.
+    ports:
+      - "127.0.0.1:3001:3001"
     environment:
       PORT: "3001"
       DATA_DIR: /data

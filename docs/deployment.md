@@ -27,6 +27,88 @@ DNS:
 | A | `game.example.com` | VPS IPv4 |
 | AAAA | `game.example.com` | VPS IPv6, optional |
 
+### Finding the VPS public IP
+
+`hostname -I` and `ip addr` show interface addresses, which are often private
+(`10.x`, `192.168.x`, `172.16–31.x`). Ask the server itself what the internet
+sees:
+
+```bash
+curl -4 -s https://ifconfig.me
+curl -4 -s https://api.ipify.org
+curl -4 -s https://ifconfig.co
+```
+
+From your laptop, if you can SSH in:
+
+```bash
+ssh user@server 'curl -4 -s https://ifconfig.me'
+```
+
+Or use the terminal in Coolify (Server → Terminal) and run the same command. The
+Coolify server settings page may also show the detected IP, but verify it with an
+external lookup — detected IPs can be private.
+
+If the server is behind a home router/NAT, the public IP belongs to the router;
+ports 80 and 443 must be forwarded to the server, or use a tunnel/hosted proxy.
+
+### Cloudflare DNS and proxy
+
+- `A` record: the **public IPv4** from the lookup above. Add `AAAA` only if the
+  server has a working public IPv6.
+- **First deploy: set Cloudflare proxy to DNS only (grey cloud).** This lets
+  Coolify/Traefik complete Let's Encrypt HTTP validation and makes Coolify's DNS
+  check see the real origin IP.
+- Once HTTPS works on the origin, you can enable the orange-cloud proxy:
+  - SSL/TLS mode: **Full (strict)**.
+  - Never use **Flexible** with Coolify — it causes redirect loops.
+  - WebSockets are supported on the standard HTTPS port; this app uses
+    `wss://game.example.com/rt/ws`, so no special port is needed.
+- With the proxy on, Coolify's “DNS matches” check may fail because the hostname
+  resolves to Cloudflare IPs. That is expected; the origin is still the VPS.
+- Cloudflare only proxies standard HTTP/HTTPS ports. Keep Coolify's internal
+  ports in the domain field; do not browse to `:3000` or `:3001`.
+
+If WebSockets fail only with the proxy enabled, temporarily switch back to grey
+cloud to isolate whether the issue is Cloudflare or Coolify.
+
+### Existing host nginx (Coolify Custom Proxy)
+
+If the server already runs nginx on 80/443 — for example because the Coolify
+dashboard is served at `coolify.example.com` through that nginx — Coolify's own
+proxy cannot bind those ports. Set the Coolify server proxy type to
+**Custom / None** and let nginx route to the Compose services.
+
+`compose.yaml` binds both services on loopback for this case:
+
+```yaml
+web:      ports: ["127.0.0.1:3000:3000"]
+realtime: ports: ["127.0.0.1:3001:3001"]
+```
+
+These are not publicly reachable. The host nginx proxies to them.
+
+Use [`deploy/nginx/cosa-nostra.conf.example`](../deploy/nginx/cosa-nostra.conf.example)
+as the starting config:
+
+- `/` → `http://127.0.0.1:3000`
+- `/rt/` → `http://127.0.0.1:3001`, with WebSocket upgrade headers
+- The `/rt` prefix is preserved; the realtime server also accepts stripped paths
+
+Then:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d cosa-nostra.bindthorpe.com
+```
+
+Set `ALLOWED_ORIGINS=https://cosa-nostra.bindthorpe.com` and redeploy.
+
+Coolify’s domain fields do **not** configure an external nginx. The hostname and
+port mapping live in nginx; the Coolify domain entry is informational in Custom
+Proxy mode. Do not switch Coolify back to Traefik while nginx owns 80/443.
+
 ---
 
 ## 2. Create the Coolify resource
@@ -224,6 +306,11 @@ Rollback:
 
 | Symptom | Check |
 |---|---|
+| Timeout on `*.10.x.x.x.sslip.io` | The sslip subdomain encodes a private IP. Use a real domain or `<public-ip>.sslip.io`; “DNS matches” only compares against Coolify’s detected server IP |
+| Timeout on a real domain | DNS A/AAAA → VPS public IP; ports 80/443 open in the provider firewall and `ufw`; Coolify proxy container running |
+| Browser URL ends in `:3000` | Wrong. `:3000` in the Coolify domain field is the **internal** container port; browse `https://game.example.com` |
+| TLS cert name mismatch | Coolify still has the old domain or no router/cert for this hostname; update the web domain, enable HTTPS, redeploy, then check ACME logs |
+| `curl` shows `Server: nginx/...`, a default page, or another site’s cert | DNS points at a different server, or host nginx owns 80/443. Confirm the Coolify VPS public IP; check `ss -ltnp` and `docker ps` |
 | Web loads, socket fails | `ALLOWED_ORIGINS`, `/rt/ws` routing, TLS/WSS, proxy upgrade support |
 | 503 from Coolify | Domain attached to wrong service or wrong internal port |
 | 404 on `/rt/health` | Try `/health`; confirm realtime service domain |
