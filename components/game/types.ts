@@ -84,6 +84,8 @@ export interface GameAlert {
   read: boolean;
   titleKey: string;
   detailKey: string;
+  params?: Record<string, string | number>;
+  at: number;
 }
 
 export interface GraveyardMessage {
@@ -117,4 +119,6 @@ export interface GameState {
   alerts: GameAlert[];
   graveyard: GraveyardMessage[];
   graveyardUnread: number;
+  /** Live mode only: whether the host may start the game right now. */
+  canStart?: boolean;
 }

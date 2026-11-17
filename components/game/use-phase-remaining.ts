@@ -11,9 +11,25 @@ export function usePhaseRemaining() {
   useEffect(() => {
     if (state.phaseEndsAt === null) return;
 
-    const interval = window.setInterval(() => setNow(Date.now()), 250);
+    const update = () => setNow(Date.now());
+    const interval = window.setInterval(update, 250);
+    const onVisible = () => {
+      if (!document.hidden) update();
+    };
 
-    return () => window.clearInterval(interval);
+    // Phase changes and tab restores should snap to the absolute end time,
+    // not wait for the next interval tick.
+    queueMicrotask(update);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [state.phaseEndsAt]);
 
   if (state.phaseEndsAt === null) {

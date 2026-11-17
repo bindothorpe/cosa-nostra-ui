@@ -1,0 +1,80 @@
+# Local production-like stack: same-origin through Caddy on http://localhost:8080.
+#
+#   docker compose -f compose.local.yaml up --build
+#
+# Caddy routes /rt/* to realtime and everything else to web, so the browser
+# derives the WebSocket URL from window.location (no NEXT_PUBLIC_REALTIME_BASE).
+#
+# For phone-over-LAN testing, set ALLOWED_ORIGINS to include the exact origin,
+# e.g. ALLOWED_ORIGINS=http://localhost:8080,http://192.168.1.10:8080.
+
+name: cosa-nostra-local
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GAME_MODE: ${NEXT_PUBLIC_GAME_MODE:-live}
+        NEXT_PUBLIC_REALTIME_BASE: ""
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  realtime:
+    build:
+      context: .
+      dockerfile: realtime/Dockerfile
+    expose:
+      - "3001"
+    environment:
+      PORT: "3001"
+      DATA_DIR: /data
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ROOM_LOBBY_TTL_MS: ${ROOM_LOBBY_TTL_MS:-7200000}
+      ROOM_GAMEOVER_TTL_MS: ${ROOM_GAMEOVER_TTL_MS:-900000}
+      SNAPSHOT_DEBOUNCE_MS: ${SNAPSHOT_DEBOUNCE_MS:-250}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+    volumes:
+      - room-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/rt/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    init: true
+    stop_grace_period: 15s
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2
+    depends_on:
+      web:
+        condition: service_healthy
+      realtime:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  room-data:
+  caddy-data:
+  caddy-config:

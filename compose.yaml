@@ -1,0 +1,63 @@
+# Production-ish stack for Coolify.
+#
+# Coolify terminates TLS with Traefik and routes:
+#   /*    -> web:3000
+#   /rt/* -> realtime:3001
+#
+# Realtime is intentionally a single instance (in-memory rooms, no Redis).
+# Do not scale the realtime service.
+
+name: cosa-nostra
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GAME_MODE: ${NEXT_PUBLIC_GAME_MODE:-live}
+        # Leave empty for same-origin /rt. Set only for the ws. subdomain fallback.
+        NEXT_PUBLIC_REALTIME_BASE: ${NEXT_PUBLIC_REALTIME_BASE:-}
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  realtime:
+    build:
+      context: .
+      dockerfile: realtime/Dockerfile
+    expose:
+      - "3001"
+    environment:
+      PORT: "3001"
+      DATA_DIR: /data
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://game.example.com}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ROOM_LOBBY_TTL_MS: ${ROOM_LOBBY_TTL_MS:-7200000}
+      ROOM_GAMEOVER_TTL_MS: ${ROOM_GAMEOVER_TTL_MS:-900000}
+      SNAPSHOT_DEBOUNCE_MS: ${SNAPSHOT_DEBOUNCE_MS:-250}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+    volumes:
+      - room-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/rt/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    init: true
+    stop_grace_period: 15s
+    restart: unless-stopped
+
+volumes:
+  room-data:

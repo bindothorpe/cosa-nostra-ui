@@ -1,6 +1,6 @@
 # Cosa Nostra — Multiplayer Architecture & Implementation Plan
 
-Status: **approved design, not implemented**
+Status: **Phases 0–5 complete; Phase 6 deployment artifacts and Coolify runbook ready; live VPS deploy/dry-run pending**
 Audience: implementation agent (human or AI) taking over the work
 Last updated: 2026-11-16
 
@@ -47,7 +47,7 @@ prototype, not a networked game.
 The target is:
 
 - Multiple rooms, joined by short code.
-- 8–16 players per room.
+- 3–16 players per room.
 - Server-authoritative game engine: the server validates every action, resolves nights,
   tallies votes, and decides eliminations and win conditions.
 - One WebSocket per player; the server pushes a full, versioned, per-player snapshot on
@@ -75,7 +75,7 @@ This document defines the data, actions, and transitions those screens must use.
 | UI runtime | Next.js standalone Docker image |
 | Realtime runtime | One Node.js process using `ws` |
 | Rooms | Multiple rooms, short join code |
-| Players per room | 8–16 (minimum 8 to start, maximum 16) |
+| Players per room | 3–16 (minimum 3 to start, maximum 16) |
 | Transport | WebSocket |
 | State sync | Full per-player snapshot on every accepted change |
 | Identity | Name + random token in `localStorage` |
@@ -307,7 +307,7 @@ paths above so the screen work is unaffected.
 
 ```ts
 export type PlayerId = string;   // server-generated, stable, opaque (e.g. "p_...")
-export type RoomCode = string;   // 6 chars, uppercase, unambiguous alphabet
+export type RoomCode = string;   // 5 chars, uppercase A-Z
 export type RoleId =
   | "godfather"
   | "framer"
@@ -404,6 +404,7 @@ export interface RoomState {
 }
 
 export interface NightAction {
+  kind: "kill" | "frame" | "investigate" | "protect";
   targetId: PlayerId;
   submittedAt: number;
 }
@@ -429,8 +430,8 @@ export interface NightReportView {
 ```ts
 export interface RoomConfig {
   rolePreset: "default" | "custom";
-  minPlayers: number;              // fixed 8 in v1
-  maxPlayers: number;              // fixed 16 in v1
+  minPlayers: number;              // 3..16, per room (UI seat target)
+  maxPlayers: number;              // 3..16, per room; min <= max
   roleCounts: Record<RoleId, number>;
   phaseDurations: Record<Exclude<Phase, "lobby" | "gameOver">, number>; // ms
   whisperBudget: number;           // per living player per day
@@ -442,19 +443,20 @@ export interface RoomConfig {
 Two validation stages:
 
 **At room creation (`POST /rt/rooms`)** — structural validation for Custom; Default uses
-the composition table:
+the composition function:
 
+- `3 <= minPlayers <= maxPlayers <= 16`, both integers.
 - Exactly one `godfather` if any mafia are configured; godfather count must not exceed 1.
 - `framer` count = total mafia − 1.
 - `detective <= 1`, `doctor <= 1`, `jester <= 1`.
 - At least one town-aligned player.
 - At least one mafia player.
-- Durations: 15_000 ms ≤ value ≤ 600_000 ms.
+- Durations: 10_000 ms ≤ value ≤ 600_000 ms.
 - Whisper budget: 0–10.
 - All counts are non-negative integers.
 
 For `rolePreset: "default"`, `roleCounts` are ignored on input and recomputed from the
-composition table for the current player count whenever someone joins. For
+composition function for the current player count whenever someone joins. For
 `rolePreset: "custom"`, the supplied counts are stored as the host's target and may be
 edited in the lobby; they do **not** need to sum to the current player count yet.
 
@@ -468,28 +470,36 @@ The lobby start button is disabled until composition validation passes. A Custom
 counts that do not match the joined count cannot start; the host either edits the counts or
 waits for the right number of players.
 
-### 7.4 Default role composition (config table)
+### 7.4 Default role composition (config function)
 
 These are the starting values for the **Default** preset. They live in
-`game-core/config.ts` and can be edited without touching engine logic.
+`game-core/config.ts` as `defaultRoleCountsFor(playerCount)`.
 
 | Players | Godfather | Framer | Detective | Doctor | Jester | Villager |
 |---:|---:|---:|---:|---:|---:|---:|
+| 3 | 1 | 0 | 1 | 1 | 0 | 0 |
+| 4 | 1 | 0 | 1 | 1 | 0 | 1 |
+| 5 | 1 | 0 | 1 | 1 | 1 | 1 |
+| 6 | 1 | 0 | 1 | 1 | 1 | 2 |
+| 7 | 1 | 0 | 1 | 1 | 1 | 3 |
 | 8 | 1 | 1 | 1 | 1 | 1 | 3 |
 | 9 | 1 | 1 | 1 | 1 | 1 | 4 |
-| 10 | 1 | 2 | 1 | 1 | 1 | 4 |
-| 11 | 1 | 2 | 1 | 1 | 1 | 5 |
+| 10 | 1 | 1 | 1 | 1 | 1 | 5 |
+| 11 | 1 | 1 | 1 | 1 | 1 | 6 |
 | 12 | 1 | 2 | 1 | 1 | 1 | 6 |
-| 13 | 1 | 3 | 1 | 1 | 1 | 6 |
-| 14 | 1 | 3 | 1 | 1 | 1 | 7 |
-| 15 | 1 | 3 | 1 | 1 | 1 | 8 |
+| 13 | 1 | 2 | 1 | 1 | 1 | 7 |
+| 14 | 1 | 2 | 1 | 1 | 1 | 8 |
+| 15 | 1 | 2 | 1 | 1 | 1 | 9 |
 | 16 | 1 | 3 | 1 | 1 | 1 | 9 |
 
-Mafia is approximately 25% of the table. If the owner changes these numbers, update the
-table here and the config together. For `rolePreset: "default"`, the server looks up the
-row for the current joined player count; joining/leaving in the lobby changes the planned
-composition automatically. Custom rooms keep the host's explicit counts instead. Below 8
-players there is no default composition and `startGame` is blocked.
+Formula: mafia = `max(1, floor(players / 4))`; neutral = 1 when players ≥ 5; town is the
+remainder. One detective, one doctor when town ≥ 2, one jester when neutral, rest villagers.
+This matches the owner's create-room screen.
+
+For `rolePreset: "default"`, the server looks up the composition for the current joined
+player count; joining/leaving in the lobby changes the planned composition automatically.
+Custom rooms keep the host's explicit counts instead. Below 3 players there is no default
+composition and `startGame` is blocked.
 
 ### 7.5 Default rules values
 
@@ -518,7 +528,7 @@ every rule.
 ### 8.1 Room lifecycle
 
 1. Anyone can create a room. The creator becomes host and first player.
-2. Room code is generated server-side, 6 characters, collision-checked.
+2. Room code is generated server-side, 5 characters, collision-checked.
 3. Additional players join while `phase === "lobby"` and `players.length < 16`.
 4. Names are trimmed, 1–20 characters, unique within the room (case-insensitive).
 5. Host starts when `players.length >= 8` and role counts sum to the player count.
@@ -573,22 +583,30 @@ voteResult ── all ready / timeout ──► gameOver if winner, else night (
 
 One action per living player with an active role. Passive roles have none.
 
-| Role | Action | Target rules |
+`submitNightAction` includes an explicit `kind`, because a framer may have to choose
+between framing and killing when the godfather is dead:
+
+```ts
+{ type: "submitNightAction"; kind: "kill" | "frame" | "investigate" | "protect"; targetId: PlayerId }
+```
+
+| Role | Allowed kinds | Target rules |
 |---|---|---|
-| Godfather | Kill | Living player, not self |
-| Framer | Frame | Living player, not self |
-| Detective | Investigate | Living player, not self |
-| Doctor | Protect | Living player, not self |
-| Villager | None | — |
-| Jester | None | — |
+| Godfather | `kill` | Living player, not self |
+| Framer | `frame`; plus `kill` if godfather is dead and this framer is senior | Living player, not self |
+| Detective | `investigate` | Living player, not self |
+| Doctor | `protect` | Living player, not self |
+| Villager | none | — |
+| Jester | none | — |
 
 Mafia kill authority:
 
-- If the godfather is alive, only the godfather's kill submission counts.
+- If the godfather is alive, only the godfather's `kill` submission counts.
 - If the godfather is dead, the living mafia with the lowest `joinedAt` (the senior framer)
-  submits the kill.
+  may submit `kill` instead of `frame`.
 - Non-authorised mafia kill submissions are rejected with `NOT_AUTHORISED`.
 - Each living framer may frame one target. Multiple framers may frame different targets.
+- A framer who submits `kill` cannot also frame that night; one action per player.
 
 ### 8.5 Night resolution
 
@@ -742,6 +760,8 @@ or
   "name": "Alessia",
   "config": {
     "rolePreset": "custom",
+    "minPlayers": 8,
+    "maxPlayers": 8,
     "roleCounts": { "godfather": 1, "framer": 1, "detective": 1, "doctor": 1, "jester": 1, "villager": 3 },
     "phaseDurations": { "roleReveal": 60000, "night": 90000, "nightReport": 10000, "dayDiscussion": 300000, "voting": 60000, "voteResult": 10000 },
     "whisperBudget": 3,
@@ -752,7 +772,7 @@ or
 ```
 
 `config: "default"` expands to `rolePreset: "default"` with the standard durations, budget,
-and tie rule. Default `roleCounts` are recomputed from the composition table as players
+and tie rule. Default `roleCounts` are recomputed from the composition function as players
 join. Custom counts are the host's target and are validated against the joined player count
 at start (see §7.3).
 
@@ -760,7 +780,7 @@ Response `201`:
 
 ```json
 {
-  "code": "K7QX2M",
+  "code": "KQX2M",
   "playerId": "p_01J...",
   "token": "<opaque 32-byte base64url>"
 }
@@ -786,7 +806,7 @@ Behavior:
 Response `200`:
 
 ```json
-{ "code": "K7QX2M", "playerId": "p_01K...", "token": "<opaque base64url>" }
+{ "code": "KQX2M", "playerId": "p_01K...", "token": "<opaque base64url>" }
 ```
 
 #### `GET /rt/health`
@@ -876,7 +896,7 @@ type Command =
   | { type: "setReady" }
   | { type: "unsetReady" }
   | { type: "startGame" }
-  | { type: "submitNightAction"; targetId: PlayerId }
+  | { type: "submitNightAction"; kind: "kill" | "frame" | "investigate" | "protect"; targetId: PlayerId }
   | { type: "castVote"; targetId: PlayerId }
   | { type: "sendWhisper"; toPlayerId: PlayerId; text: string }
   | { type: "sendGraveyardMessage"; text: string }
@@ -887,11 +907,11 @@ type Command =
 
 Validation summary:
 
-- `startGame`: host only, lobby only, 8–16 players, role counts valid and sum to players.
+- `startGame`: host only, lobby only, 3–16 players, role counts valid and sum to players.
 - `updateConfig`: host only, lobby only, validated config. Default-preset rooms may still
   update non-role fields; if the host switches to Custom, explicit counts are required.
-- `submitNightAction`: night only, living, active role, correct actor authority, living
-  target, not self.
+- `submitNightAction`: night only, living, allowed `kind` for the role, correct actor
+  authority for `kill`, living target, not self.
 - `castVote`: voting only, living, living target, not self.
 - `sendWhisper`: dayDiscussion only, living sender and recipient, budget remaining,
   non-empty text ≤ 500 chars.
@@ -913,13 +933,13 @@ Validation summary:
 - Max frame size: 8 KiB.
 - Commands: token bucket, 10 per second burst, 60 per minute per socket.
 - Whisper: at most 1 per 500 ms per player.
-- Join attempts: 10 per minute per IP.
+- Join attempts: 10 per minute per IP per room.
 - Room creation: 5 per hour per IP.
 - Behind Traefik, read the client IP from `X-Forwarded-For` only when the proxy is trusted
   (it is the only ingress). Do not trust that header if the server is ever exposed directly.
 - Display name: 1–20 characters after trim; strip control characters; reject empty.
 - Message text: 1–500 characters after trim.
-- Room codes: 6 chars from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no I, O, 0, 1).
+- Room codes: 5 chars from `ABCDEFGHIJKLMNOPQRSTUVWXYZ`.
 
 ---
 
@@ -1099,7 +1119,7 @@ interface RoomContextValue {
     setReady(): void;
     unsetReady(): void;
     startGame(): void;
-    submitNightAction(targetId: PlayerId): void;
+    submitNightAction(kind: "kill" | "frame" | "investigate" | "protect", targetId: PlayerId): void;
     castVote(targetId: PlayerId): void;
     sendWhisper(toPlayerId: PlayerId, text: string): void;
     sendGraveyardMessage(text: string): void;
@@ -1137,7 +1157,28 @@ interface RoomContextValue {
 
 ### 11.5 Route flow
 
-Recommended room-scoped routes:
+Implemented route flow (flat URLs, active room in `localStorage`):
+
+```
+/                       landing (join code / create link)
+/create                 host room setup
+/join?code=ABC12         name entry
+/lobby                  waiting room; host starts
+/play                   phase router
+/whispers
+/whispers/[playerId]
+/alerts
+/graveyard
+/codex                  static reference
+/admin                  host info; server-owned phase note in live mode
+/live, /live/[code]     Phase 3 live verification screen
+```
+
+The earlier room-scoped sketch below was not implemented. The root `GameProvider` restores
+the last room + token and connects; `app/(game)/layout.tsx` keeps the shell and timer
+mounted across game routes.
+
+Historical sketch (not implemented):
 
 ```
 /                       landing (name, create room, join code)
@@ -1168,6 +1209,10 @@ Recommended room-scoped routes:
   and pass the string to the client provider. The root layout keeps only global providers
   and the `max-w-md` shell. In mock mode, keep `GameProvider` at the root for the legacy
   routes.
+- Keep the game chrome (`AppShell`, `PhaseTimer`, `BottomNav`) in a shared route-group
+  layout such as `app/(game)/layout.tsx`, with game pages beneath it. A route group keeps
+  URLs unchanged while preserving the timer across `bottom-nav` navigation. Do not put
+  `AppShell` inside each page; that remounts the timer and restarts its progress bar.
 - Make `AppShell`, `BottomNav`, `PhaseTimer`, and `RolePeekButton` accept room data via
   `useRoom()` or props after migration. `BottomNav` links must include the room code.
 - Keep `/codex` independent of room state: either move it under `/room/[code]/codex` or
@@ -1242,7 +1287,7 @@ export interface PlayerView {
   waitingCount: number;
   yourRole: RoleId;
   yourFaction: Faction;
-  yourAction: { targetId: PlayerId } | null;
+  yourAction: NightAction | null;
   yourVote: PlayerId | null;
   voteTally: Record<PlayerId, number> | null;
   eliminatedIds: PlayerId[];
@@ -1363,7 +1408,7 @@ use. Keep all screens mobile-first and shadcn-based per `CLAUDE.md`.
 ### 15.1 Unit tests (`game-core`)
 
 - Room creation, join, capacity, duplicate names, reclaim by token hash.
-- Role assignment for every player count 8–16; deterministic with fixed seed.
+- Role assignment for every player count 3–16; deterministic with fixed seed.
 - Config validation: every rejection path.
 - Phase transitions and round increments.
 - Ready semantics per phase; timeout resolution with missing actions.
@@ -1530,39 +1575,46 @@ Acceptance:
 - Killing the realtime process triggers reconnect and recovery after restart.
 - Mock mode still works.
 
+Implementation note: `/live` and `/live/[code]` are the Phase 3 verification screen. They are
+not the final game UI. `tests/e2e/live.spec.ts` drives eight isolated browser contexts
+through create → 8 joins → start → roleReveal → ready → night → reconnect, plus a
+started-game join rejection. The owner's `/create`, `/join`, `/lobby`, and `(game)` screens
+remain on the mock provider until Phase 4.
+
 ### Phase 4 — Migrate screens
 
 **Goal:** full game playable through the real server.
 
-Owner implements/refines screens; implementer wires the contracts.
-
 Tasks:
 
-- Add `/join/[code]`, `/room/[code]/*` routes.
+- Keep the owner's flat routes (`/create`, `/join?code=`, `/lobby`, `(game)/*`) and the
+  route-group layout; do not introduce `/room/[code]` URLs. Active room + token live in
+  `localStorage`.
 - Wire join/create onboarding, lobby, role reveal, night action, night report, day,
-  voting, vote result, game over, spectator.
-- Rewrite `action-panel.tsx` against `useRoom()`; it currently owns mock action-slot rules.
-  Move slot/target rules into `game-core` or a shared role-metadata module so client and
-  server agree on legal targets.
-- Wire whispers list/thread, alerts, graveyard, room settings.
-- Replace `useGame()` with `useRoom()` screen by screen.
-- Update `AppShell`, `BottomNav`, `PhaseTimer`, `use-phase-remaining`, and `RolePeekButton`
-  to accept room data; prefix nav links with `/room/[code]`.
-- Add i18n namespaces and error messages.
-- Remove hardcoded room code, seeds, bots, and `ROOM_CODE` imports from the live path.
-- Raise the player cap from the current `MAX_PLAYERS = 12` to 16 wherever the UI shows it.
-- Keep `/codex` content, but make it independent of room state (move it under the room
-  layout or render a room-less shell).
-- Replace `/admin` with `/room/[code]/settings`; remove skip/kill-self controls.
-- Redirect or remove legacy routes after migration.
+  voting, vote result, game over, spectator, whispers, alerts, graveyard, and admin.
+- Introduce a live adapter behind the existing `useGame()` contract so screens keep their
+  visual design while reading `PlayerView` and sending real commands.
+- Add async create/join handling, loading/error states, and host-only `canStart`.
+- Add ready controls for passive night roles, night report, and vote result.
+- Hide role peek in the lobby (server role is a placeholder until `roleReveal`).
+- Keep `/codex` static.
+- Keep mock mode behind `NEXT_PUBLIC_GAME_MODE=mock`; Docker builds live.
 
 Acceptance:
 
-- A full 8-player game runs end-to-end on a 375px viewport.
+- A live 3–16-player game runs end-to-end on a 375px viewport.
 - Dead players see spectator + graveyard only.
 - Whispers are private.
-- No screen reads the mock context in live mode.
+- No screen reads the mock game data in live mode.
 - `pnpm typecheck`, `pnpm lint`, tests, and build pass.
+
+Implementation note: the adapter is `components/game/live-game-provider.tsx` plus
+`components/game/game-context.ts`; `components/game/game-provider.tsx` selects mock vs live.
+The owner's screens were not rewritten to consume `useRoom()` directly; the adapter maps
+`PlayerView` into the existing `GameState`/`GameContextValue` shape to preserve the UI. This
+is a deliberate deviation from the original `useRoom()`-per-screen plan. `tests/e2e/game.spec.ts`
+verifies the real screens (create via API, three players, start, role reveal, night,
+reconnect); `tests/e2e/live.spec.ts` verifies eight players and the raw live path.
 
 ### Phase 5 — Hardening and polish
 
@@ -1586,6 +1638,21 @@ Acceptance:
 - A server restart mid-game preserves the room and resumes timers.
 - Mobile checks pass at 320px and 375px.
 
+Implementation note (Phase 5):
+
+- `components/game/connection-banner.tsx` shows connecting/reconnecting/error state in
+  `AppShell` and the lobby. WS command errors surface there with translated `Errors.*`
+  messages; a successful sync clears them.
+- `RoomSocket` reconnects immediately on `online` / visible tab, keeps one socket per seat,
+  and ignores superseded sockets. Backoff is 500ms–10s with jitter.
+- `offsetFrom` clamps server clock skew to ±5 minutes.
+- E2E now covers: host-only start, removed legacy hint, 320px no-horizontal-scroll,
+  auto-read alert ordering, no Ready control on dawn/vote-result, and vote-result timing.
+- CI has a separate Playwright + Docker Compose E2E job.
+- Still not covered by browser tests: a full game through game-over, an explicit
+  16-player UI load test, iOS Safari/real-device runs, and an automated chaos script.
+  Engine/integration tests cover 16-player role setup and server restart recovery.
+
 ### Phase 6 — Deployment
 
 **Goal:** production URL on the VPS via Coolify.
@@ -1607,6 +1674,13 @@ Acceptance:
 - Logs show no tokens or message contents.
 - Rollback to the previous image works.
 
+Implementation note: `docs/deployment.md` is the Coolify Git + Docker Compose
+runbook. The realtime server accepts both `/rt/*` and prefix-stripped paths
+(`/health`, `/rooms`, `/ws`), so one Coolify hostname with `/rt` routing works
+whether Coolify strips the prefix or not. `deploy/coolify.env.example` lists the
+env/build values. The remote deploy, external uptime monitors, and production
+dry run/rollback still require access to the actual Coolify instance.
+
 ### Phase 7 — Deferred / optional
 
 Do not start without explicit approval:
@@ -1623,6 +1697,10 @@ Do not start without explicit approval:
 ---
 
 ## 17. Deployment runbook
+
+The step-by-step Coolify + Git repository + Docker Compose guide lives in
+[`docs/deployment.md`](./deployment.md). The summary below remains the source for
+topology and operational expectations.
 
 ### 17.1 Prerequisites
 
@@ -1927,7 +2005,7 @@ These are intentional defaults. Do not silently change them; ask the owner.
 
 ## 20. Definition of done (v1)
 
-A group of 8–16 people can:
+A group of 3–16 people can:
 
 1. Open one URL on their phones.
 2. Create or join a room with a code.
@@ -1981,7 +2059,7 @@ ws.onopen = () => ws.send(JSON.stringify({ type: "hello", code, token }));
   "version": 12,
   "serverNow": 1763300000000,
   "view": {
-    "code": "K7QX2M",
+    "code": "KQX2M",
     "phase": "night",
     "round": 2,
     "phaseEndsAt": 1763300090000,
@@ -1999,7 +2077,7 @@ ws.onopen = () => ws.send(JSON.stringify({ type: "hello", code, token }));
 }
 
 // Client → server
-{ "type": "command", "id": "c_abc", "command": { "type": "submitNightAction", "targetId": "p_2" } }
+{ "type": "command", "id": "c_abc", "command": { "type": "submitNightAction", "kind": "kill", "targetId": "p_2" } }
 
 // Server → sender
 { "type": "sync", "version": 13, "serverNow": 1763300010000, "ackId": "c_abc", "view": { /* updated */ } }

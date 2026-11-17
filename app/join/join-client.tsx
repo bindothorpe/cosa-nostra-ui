@@ -3,17 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { useMessages, useTranslations } from "next-intl";
+import { ArrowLeft, CircleAlert, KeyRound, LoaderCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocaleSwitcher } from "@/components/game/locale-switcher";
 import { useGame } from "@/components/game/game-provider";
 import { IdentityFields } from "@/components/room/identity-fields";
+import { hasMessage } from "@/app/live/error-text";
 
 export function JoinClient() {
   const t = useTranslations("JoinRoom");
+  const rootT = useTranslations();
+  const messages = useMessages();
   const identityT = useTranslations("Identity");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,10 +27,30 @@ export function JoinClient() {
   const [name, setName] = useState("");
   const [allowComplexRoles, setAllowComplexRoles] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function describeError(caught: unknown): string {
+    if (typeof caught === "object" && caught !== null && "messageKey" in caught) {
+      const { messageKey, params } = caught as {
+        messageKey?: unknown;
+        params?: Record<string, string | number>;
+      };
+      if (typeof messageKey === "string" && hasMessage(messages, messageKey)) {
+        try {
+          return rootT(messageKey as string, params);
+        } catch {
+          // Missing params for a known key: use the local fallback instead.
+        }
+      }
+    }
+
+    return t("joinError");
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!code) return;
+    if (!code || pending) return;
 
     const trimmed = name.trim();
     if (!trimmed) {
@@ -40,8 +63,17 @@ export function JoinClient() {
     }
 
     setNameError(null);
-    joinRoom({ code, name: trimmed, allowComplexRoles });
-    router.push("/lobby");
+    setSubmitError(null);
+    setPending(true);
+
+    try {
+      await joinRoom({ code, name: trimmed, allowComplexRoles });
+      router.push("/lobby");
+    } catch (caught) {
+      setSubmitError(describeError(caught));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -120,14 +152,29 @@ export function JoinClient() {
                   onNameChange={(value) => {
                     setName(value);
                     setNameError(null);
+                    setSubmitError(null);
                   }}
                   allowComplexRoles={allowComplexRoles}
                   onAllowComplexRolesChange={setAllowComplexRoles}
                   nameError={nameError}
                 />
 
-                <Button type="submit" className="h-12 w-full text-sm">
+                {submitError ? (
+                  <Alert variant="destructive" className="p-3">
+                    <CircleAlert />
+                    <AlertDescription>{submitError}</AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <Button
+                  type="submit"
+                  className="h-12 w-full gap-2 text-sm"
+                  disabled={pending}
+                >
                   {t("join")}
+                  {pending ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : null}
                 </Button>
               </form>
             </CardContent>

@@ -1,0 +1,48 @@
+# VCS and repo metadata
+.git
+.gitignore
+.github
+.dockerignore
+
+# Dependencies and build output (regenerated inside the image)
+node_modules
+.pnpm-store
+.next
+out
+build
+realtime/dist
+*.tsbuildinfo
+
+# Test artifacts and test sources
+coverage
+playwright-report
+test-results
+**/test
+**/tests
+**/e2e
+**/*.test.*
+**/*.spec.*
+
+# Runtime data (snapshots must never be baked into an image)
+data
+/data
+
+# Local env files and secrets
+.env*
+!.env.example
+
+# Docs and agent/project notes
+docs
+README.md
+AGENTS.md
+CLAUDE.md
+
+# Orchestration files are not needed inside the build stages
+compose.yaml
+compose.local.yaml
+Caddyfile.local
+Dockerfile
+realtime/Dockerfile
+
+# OS noise
+.DS_Store

@@ -220,6 +220,7 @@ export const ALERT_SEED: GameAlert[] = [
     read: false,
     titleKey: "Alerts.seed.killedTitle",
     detailKey: "Alerts.seed.killedBody",
+    at: 5,
   },
   {
     id: "alert-blocked",
@@ -228,6 +229,7 @@ export const ALERT_SEED: GameAlert[] = [
     read: false,
     titleKey: "Alerts.seed.blockedTitle",
     detailKey: "Alerts.seed.blockedBody",
+    at: 4,
   },
   {
     id: "alert-investigation",
@@ -236,6 +238,7 @@ export const ALERT_SEED: GameAlert[] = [
     read: true,
     titleKey: "Alerts.seed.investigatedTitle",
     detailKey: "Alerts.seed.investigatedBody",
+    at: 3,
   },
   {
     id: "alert-night",
@@ -244,6 +247,7 @@ export const ALERT_SEED: GameAlert[] = [
     read: true,
     titleKey: "Alerts.seed.nightTitle",
     detailKey: "Alerts.seed.nightBody",
+    at: 2,
   },
   {
     id: "alert-vote",
@@ -252,6 +256,7 @@ export const ALERT_SEED: GameAlert[] = [
     read: true,
     titleKey: "Alerts.seed.voteTitle",
     detailKey: "Alerts.seed.voteBody",
+    at: 1,
   },
 ];
 

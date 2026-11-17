@@ -10,7 +10,10 @@ export function NightReportScreen() {
   const phaseT = useTranslations("Phase");
   const { state } = useGame();
 
-  const report = state.alerts.slice(0, 3);
+  const report = state.alerts
+    .filter((alert) => alert.night === state.round)
+    .slice(-3)
+    .reverse();
 
   return (
     <div className="space-y-5">

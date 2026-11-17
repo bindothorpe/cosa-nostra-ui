@@ -19,6 +19,35 @@
     "waitingFor": "Waiting for {count, plural, =1 {1 player} other {# players}}.",
     "allReady": "All players ready."
   },
+  "Errors": {
+    "connecting": "Connecting to the table…",
+    "reconnecting": "Reconnecting…",
+    "replacedByNewConnection": "This table is open in another tab.",
+    "noToken": "No seat is saved in this browser.",
+    "rateLimit": "Too many actions. Wait a moment and try again.",
+    "unknown": "Something went wrong. Try again.",
+    "roomNotFound": "That room no longer exists.",
+    "invalidToken": "This seat is no longer valid. Join the room again.",
+    "notHost": "Only the host can do that.",
+    "wrongPhase": "That action isn't available right now.",
+    "notAlive": "Dead players can't do that.",
+    "onlyDead": "Only dead players can use the graveyard.",
+    "lastPlayer": "The last player can't leave the table.",
+    "notEnoughPlayers": "At least {min} players are needed.",
+    "tooManyPlayers": "This room allows at most {max} players.",
+    "roleCountMismatch": "The role setup doesn't match the table ({expected} seats, {actual} roles).",
+    "notAuthorised": "Your role can't do that.",
+    "notYourTurn": "Your role has a different action.",
+    "invalidTarget": "That player can't be chosen.",
+    "invalidText": "Messages must be {min}–{max} characters.",
+    "whisperBudgetExhausted": "You have no whispers left today.",
+    "playerNotFound": "That player is no longer at the table.",
+    "invalidConfig": "That room setup isn't valid.",
+    "notImplemented": "That action isn't available yet.",
+    "badFrame": "A message couldn't be processed. Try again.",
+    "helloRequired": "The connection didn't start correctly. Reload the page.",
+    "internal": "Something went wrong on the server. Try again."
+  },
   "Landing": {
     "table": "Tonight's table",
     "title": "Cosa Nostra",
@@ -51,7 +80,8 @@
     "join": "Take a seat",
     "back": "Back to the table",
     "invalidTitle": "That code doesn't look right",
-    "invalidBody": "Room codes are exactly 5 letters. Go back and try again."
+    "invalidBody": "Room codes are exactly 5 letters. Go back and try again.",
+    "joinError": "Could not join the room. Try again."
   },
   "CreateRoom": {
     "steps": {
@@ -101,7 +131,8 @@
     "next": "Continue",
     "back": "Back",
     "createHint": "A five-letter code is generated when the room is created.",
-    "stepHint": "Your choices become the room setup."
+    "stepHint": "Your choices become the room setup.",
+    "createError": "Could not create the room. Try again."
   },
   "RoomConfig": {
     "title": "Room setup",
@@ -139,9 +170,12 @@
     "copied": "Copied",
     "copyFailed": "Copy failed",
     "start": "Start game",
-    "hint": "In the real game the host starts the round.",
     "leave": "Leave table",
-    "joinFirst": "Take a seat first"
+    "joinFirst": "Take a seat first",
+    "cannotStart": "The game can't start yet.",
+    "loadingPlayers": "Waiting for the table to sync…",
+    "startError": "Could not start the game. Try again.",
+    "leaveError": "Could not leave the table. Try again."
   },
   "Phase": {
     "lobby": "Lobby",
@@ -378,6 +412,36 @@
     "unread": "{count} new",
     "earlier": "Earlier",
     "tonight": "Latest",
+    "killed": {
+      "title": "Death at dawn",
+      "body": "{player} was killed during the night.",
+      "noDeaths": "No one died last night."
+    },
+    "saved": {
+      "title": "Save successful",
+      "body": "You protected {player} from the Mafia."
+    },
+    "investigation": {
+      "title": "Investigation result",
+      "mafia": "{player} appears to be Mafia.",
+      "notMafia": "{player} does not appear to be Mafia."
+    },
+    "kill": {
+      "title": "Kill order",
+      "success": "{player} was eliminated.",
+      "saved": "Your target survived the night."
+    },
+    "vote": {
+      "title": "Vote result",
+      "eliminated": "{player} was eliminated.",
+      "tie": "No one was eliminated."
+    },
+    "win": {
+      "title": "Game over",
+      "town": "The Town wins.",
+      "mafia": "The Mafia wins.",
+      "jester": "{player} wins as the Jester."
+    },
     "seed": {
       "killedTitle": "Lucia was found dead",
       "killedBody": "Lucia (Villager) was killed by the Mafia.",
@@ -407,6 +471,7 @@
     "unavailable": "No next step from this phase.",
     "host": "Host",
     "mockNote": "Host-only controls. In the real game these actions belong to the host.",
+    "liveNote": "Phase progression is server-owned. The table advances when everyone is ready or the timer ends.",
     "killMe": "Kill me",
     "killMeHint": "Test the dead state and the Graveyard.",
     "dead": "You are dead.",

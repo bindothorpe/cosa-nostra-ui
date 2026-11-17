@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useMessages, useTranslations } from "next-intl";
+import { ArrowLeft, ArrowRight, CircleAlert, LoaderCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,11 +38,14 @@ import { NumberStepper } from "@/components/room/number-stepper";
 import { PhaseTimers } from "@/components/room/phase-timers";
 import { RoomConfigSummary } from "@/components/room/room-config-summary";
 import { WizardProgress } from "@/components/room/wizard-progress";
+import { hasMessage } from "@/app/live/error-text";
 
 const STEP_KEYS = ["table", "timers", "identity"] as const;
 
 export default function CreateRoomPage() {
   const t = useTranslations("CreateRoom");
+  const rootT = useTranslations();
+  const messages = useMessages();
   const identityT = useTranslations("Identity");
   const router = useRouter();
   const { createRoom } = useGame();
@@ -59,6 +63,8 @@ export default function CreateRoomPage() {
   const [name, setName] = useState("");
   const [allowComplexRoles, setAllowComplexRoles] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   const factions =
     factionPreset === "default"
@@ -92,9 +98,30 @@ export default function CreateRoomPage() {
     setCustomTimers((current) => ({ ...current, [phase]: durationMs }));
   }
 
-  function handlePrimary() {
+  function describeError(caught: unknown): string {
+    if (typeof caught === "object" && caught !== null && "messageKey" in caught) {
+      const { messageKey, params } = caught as {
+        messageKey?: unknown;
+        params?: Record<string, string | number>;
+      };
+      if (typeof messageKey === "string" && hasMessage(messages, messageKey)) {
+        try {
+          return rootT(messageKey as string, params);
+        } catch {
+          // Missing params for a known key: use the local fallback instead.
+        }
+      }
+    }
+
+    return t("createError");
+  }
+
+  async function handlePrimary() {
+    if (pending) return;
+
     if (step < STEP_KEYS.length - 1) {
       if (!canAdvance) return;
+      setSubmitError(null);
       setStep((current) => current + 1);
       return;
     }
@@ -110,6 +137,9 @@ export default function CreateRoomPage() {
     }
 
     setNameError(null);
+    setSubmitError(null);
+    setPending(true);
+
     const config = buildRoomConfig({
       playerCount,
       factionPreset,
@@ -118,8 +148,14 @@ export default function CreateRoomPage() {
       phaseDurations: customTimers,
     });
 
-    createRoom({ name: trimmed, allowComplexRoles, config });
-    router.push("/lobby");
+    try {
+      await createRoom({ name: trimmed, allowComplexRoles, config });
+      router.push("/lobby");
+    } catch (caught) {
+      setSubmitError(describeError(caught));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -257,6 +293,7 @@ export default function CreateRoomPage() {
                   onNameChange={(value) => {
                     setName(value);
                     setNameError(null);
+                    setSubmitError(null);
                   }}
                   allowComplexRoles={allowComplexRoles}
                   onAllowComplexRolesChange={setAllowComplexRoles}
@@ -279,14 +316,24 @@ export default function CreateRoomPage() {
       </main>
 
       <footer className="mt-5 space-y-2">
+        {submitError ? (
+          <Alert variant="destructive" className="p-3">
+            <CircleAlert />
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        ) : null}
         <Button
           type="button"
           className="h-12 w-full gap-2 text-sm"
-          disabled={!canAdvance}
+          disabled={!canAdvance || pending}
           onClick={handlePrimary}
         >
           {step === STEP_KEYS.length - 1 ? t("create") : t("next")}
-          <ArrowRight className="size-4" />
+          {pending ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <ArrowRight className="size-4" />
+          )}
         </Button>
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
           {step === STEP_KEYS.length - 1 ? t("createHint") : t("stepHint")}

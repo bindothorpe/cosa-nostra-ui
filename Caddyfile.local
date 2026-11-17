@@ -1,0 +1,14 @@
+:80 {
+	encode zstd gzip
+
+	# Realtime HTTP API + WebSocket upgrade live under /rt/*.
+	handle /rt/* {
+		reverse_proxy realtime:3001
+	}
+
+	# Everything else is the Next.js app. Caddy preserves the original Origin
+	# header, so realtime's ALLOWED_ORIGINS must include http://localhost:8080.
+	handle {
+		reverse_proxy web:3000
+	}
+}

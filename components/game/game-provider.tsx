@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import { GameContext, type GameContextValue } from "./game-context";
+import { LiveGameProvider } from "./live-game-provider";
 import {
   BASE_VOTE_TALLY,
   BOT_READY_INTERVAL,
@@ -32,47 +32,8 @@ import type {
   GameState,
   Phase,
   Player,
-  RoleDef,
   RoomConfig,
 } from "./types";
-
-interface GameContextValue {
-  state: GameState;
-  you: Player;
-  yourRole: RoleDef;
-  alivePlayers: Player[];
-  unreadWhispers: number;
-  unreadAlerts: number;
-  isReady: boolean;
-  waitingCount: number;
-  joinRoom: (params: {
-    code: string;
-    name: string;
-    allowComplexRoles: boolean;
-  }) => void;
-  createRoom: (params: {
-    name: string;
-    allowComplexRoles: boolean;
-    config: RoomConfig;
-  }) => void;
-  startGame: () => void;
-  markReady: () => void;
-  unready: () => void;
-  submitAction: (targets: string[]) => void;
-  castVote: (playerId: string) => void;
-  advancePhase: () => void;
-  resetGame: () => void;
-  sendWhisper: (playerId: string, text: string) => void;
-  markThreadRead: (playerId: string) => void;
-  markAllAlertsRead: () => void;
-  ensureThread: (playerId: string) => void;
-  killSelf: () => void;
-  sendGraveyardMessage: (text: string) => void;
-  markGraveyardRead: () => void;
-  getPlayer: (id: string) => Player | undefined;
-}
-
-const GameContext = createContext<GameContextValue | null>(null);
 
 function freshState(): GameState {
   return {
@@ -160,7 +121,7 @@ function nextPhaseState(current: GameState): GameState {
   }
 }
 
-export function GameProvider({ children }: { children: ReactNode }) {
+export function MockGameProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GameState>(freshState);
 
   useEffect(() => {
@@ -224,7 +185,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state.phase, state.readyIds, state.players]);
 
   const joinRoom = useCallback(
-    ({
+    async ({
       code,
       name,
       allowComplexRoles,
@@ -260,7 +221,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const createRoom = useCallback(
-    ({
+    async ({
       name,
       allowComplexRoles,
       config,
@@ -534,6 +495,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unreadAlerts,
       isReady,
       waitingCount,
+      ready: true,
       joinRoom,
       createRoom,
       startGame,
@@ -583,10 +545,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
-export function useGame() {
-  const context = useContext(GameContext);
-  if (!context) {
-    throw new Error("useGame must be used inside GameProvider");
-  }
-  return context;
+const IS_LIVE = process.env.NEXT_PUBLIC_GAME_MODE === "live";
+
+/**
+ * Chooses the live adapter when `NEXT_PUBLIC_GAME_MODE === "live"`, otherwise
+ * the unchanged mock provider. Screens keep importing `useGame` from here.
+ */
+export function GameProvider({ children }: { children: ReactNode }) {
+  return IS_LIVE ? (
+    <LiveGameProvider>{children}</LiveGameProvider>
+  ) : (
+    <MockGameProvider>{children}</MockGameProvider>
+  );
 }
+
+export { useGame } from "./game-context";
+export type { GameContextValue } from "./game-context";

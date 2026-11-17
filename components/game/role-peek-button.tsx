@@ -16,8 +16,11 @@ import { RoleCard } from "./role-card";
 
 export function RolePeekButton() {
   const t = useTranslations("Role");
-  const { you } = useGame();
+  const { you, state } = useGame();
   const [open, setOpen] = useState(false);
+
+  // Roles are not dealt until roleReveal. The lobby placeholder is not a role.
+  if (!state.joined || state.phase === "lobby") return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

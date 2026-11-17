@@ -10,15 +10,15 @@ export function RedirectScreen() {
 
 export function RequireJoined({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { state } = useGame();
+  const { state, ready } = useGame();
 
   useEffect(() => {
-    if (!state.joined) {
+    if (ready && !state.joined) {
       router.replace("/");
     }
-  }, [router, state.joined]);
+  }, [router, ready, state.joined]);
 
-  if (!state.joined) {
+  if (!ready || !state.joined) {
     return <RedirectScreen />;
   }
 

@@ -9,6 +9,7 @@ import { RequireJoined } from "./require-joined";
 import { RolePeekButton } from "./role-peek-button";
 import { LocaleSwitcher } from "./locale-switcher";
 import { PhaseTimer } from "./phase-timer";
+import { ConnectionBanner } from "./connection-banner";
 import { usePhaseLabel } from "./use-phase-label";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -39,7 +40,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+        <main className="flex-1 px-4 pb-28 pt-4">
+          <ConnectionBanner />
+          {children}
+        </main>
 
         <BottomNav />
       </div>

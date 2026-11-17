@@ -19,6 +19,35 @@
     "waitingFor": "Wachten op {count, plural, =1 {1 speler} other {# spelers}}.",
     "allReady": "Iedereen is klaar."
   },
+  "Errors": {
+    "connecting": "Verbinden met de tafel…",
+    "reconnecting": "Opnieuw verbinden…",
+    "replacedByNewConnection": "Deze tafel is open in een ander tabblad.",
+    "noToken": "Er is geen stoel opgeslagen in deze browser.",
+    "rateLimit": "Te veel acties. Wacht even en probeer het opnieuw.",
+    "unknown": "Er ging iets mis. Probeer het opnieuw.",
+    "roomNotFound": "Deze kamer bestaat niet meer.",
+    "invalidToken": "Deze stoel is niet meer geldig. Sluit opnieuw aan.",
+    "notHost": "Alleen de host kan dat doen.",
+    "wrongPhase": "Die actie is nu niet beschikbaar.",
+    "notAlive": "Dode spelers kunnen dat niet doen.",
+    "onlyDead": "Alleen dode spelers kunnen het kerkhof gebruiken.",
+    "lastPlayer": "De laatste speler kan de tafel niet verlaten.",
+    "notEnoughPlayers": "Er zijn minstens {min} spelers nodig.",
+    "tooManyPlayers": "Deze kamer staat maximaal {max} spelers toe.",
+    "roleCountMismatch": "De rolverdeling past niet bij de tafel ({expected} stoelen, {actual} rollen).",
+    "notAuthorised": "Jouw rol kan dat niet.",
+    "notYourTurn": "Jouw rol heeft een andere actie.",
+    "invalidTarget": "Die speler kan niet gekozen worden.",
+    "invalidText": "Berichten moeten {min}–{max} tekens lang zijn.",
+    "whisperBudgetExhausted": "Je hebt vandaag geen fluisters meer over.",
+    "playerNotFound": "Die speler is niet meer aan tafel.",
+    "invalidConfig": "Die kamerinstelling is ongeldig.",
+    "notImplemented": "Die actie is nog niet beschikbaar.",
+    "badFrame": "Een bericht kon niet worden verwerkt. Probeer het opnieuw.",
+    "helloRequired": "De verbinding is niet goed gestart. Herlaad de pagina.",
+    "internal": "Er ging iets mis op de server. Probeer het opnieuw."
+  },
   "Landing": {
     "table": "De tafel van vanavond",
     "title": "Cosa Nostra",
@@ -51,7 +80,8 @@
     "join": "Neem plaats",
     "back": "Terug naar de tafel",
     "invalidTitle": "Die code klopt niet",
-    "invalidBody": "Kamercodes bestaan uit precies 5 letters. Ga terug en probeer opnieuw."
+    "invalidBody": "Kamercodes bestaan uit precies 5 letters. Ga terug en probeer opnieuw.",
+    "joinError": "Deelnemen aan de kamer is niet gelukt. Probeer het opnieuw."
   },
   "CreateRoom": {
     "steps": {
@@ -101,7 +131,8 @@
     "next": "Doorgaan",
     "back": "Terug",
     "createHint": "Er wordt een code van vijf letters gemaakt zodra de kamer open is.",
-    "stepHint": "Je keuzes worden de kamerinstellingen."
+    "stepHint": "Je keuzes worden de kamerinstellingen.",
+    "createError": "De kamer kon niet worden gemaakt. Probeer het opnieuw."
   },
   "RoomConfig": {
     "title": "Kamerinstellingen",
@@ -139,9 +170,12 @@
     "copied": "Gekopieerd",
     "copyFailed": "Kopiëren mislukt",
     "start": "Start spel",
-    "hint": "In het echte spel start de host de ronde.",
     "leave": "Tafel verlaten",
-    "joinFirst": "Neem eerst plaats"
+    "joinFirst": "Neem eerst plaats",
+    "cannotStart": "Het spel kan nog niet starten.",
+    "loadingPlayers": "Wachten tot de tafel synchroniseert…",
+    "startError": "Het spel kon niet worden gestart. Probeer het opnieuw.",
+    "leaveError": "De tafel kon niet worden verlaten. Probeer het opnieuw."
   },
   "Phase": {
     "lobby": "Lobby",
@@ -378,6 +412,36 @@
     "unread": "{count} nieuw",
     "earlier": "Eerder",
     "tonight": "Laatste",
+    "killed": {
+      "title": "Dode bij zonsopgang",
+      "body": "{player} is tijdens de nacht vermoord.",
+      "noDeaths": "Er is niemand gestorven vannacht."
+    },
+    "saved": {
+      "title": "Redding gelukt",
+      "body": "Je hebt {player} beschermd tegen de Maffia."
+    },
+    "investigation": {
+      "title": "Onderzoeksresultaat",
+      "mafia": "{player} lijkt bij de Maffia te horen.",
+      "notMafia": "{player} lijkt niet bij de Maffia te horen."
+    },
+    "kill": {
+      "title": "Moordopdracht",
+      "success": "{player} is geëlimineerd.",
+      "saved": "Je doelwit overleefde de nacht."
+    },
+    "vote": {
+      "title": "Stemuitslag",
+      "eliminated": "{player} is geëlimineerd.",
+      "tie": "Er is niemand geëlimineerd."
+    },
+    "win": {
+      "title": "Spel voorbij",
+      "town": "De Stad wint.",
+      "mafia": "De Maffia wint.",
+      "jester": "{player} wint als de Dwaas."
+    },
     "seed": {
       "killedTitle": "Lucia is dood gevonden",
       "killedBody": "Lucia (Burgeling) is vermoord door de Maffia.",
@@ -407,6 +471,7 @@
     "unavailable": "Geen volgende stap vanuit deze fase.",
     "host": "Host",
     "mockNote": "Alleen voor de host. In het echte spel horen deze acties bij de host.",
+    "liveNote": "De faseovergang wordt door de server beheerd. De tafel gaat verder wanneer iedereen klaar is of de timer afloopt.",
     "killMe": "Dood mij",
     "killMeHint": "Test de doodstatus en het Kerkhof.",
     "dead": "Je bent dood.",

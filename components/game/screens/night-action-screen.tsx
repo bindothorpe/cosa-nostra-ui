@@ -4,11 +4,12 @@ import { useTranslations } from "next-intl";
 import { Moon } from "lucide-react";
 import { useGame } from "../game-provider";
 import { ActionPanel } from "../action-panel";
+import { ReadyFooter } from "../ready-footer";
 
 export function NightActionScreen() {
   const t = useTranslations("Action");
   const phaseT = useTranslations("Phase");
-  const { state } = useGame();
+  const { state, yourRole } = useGame();
 
   return (
     <div className="space-y-5">
@@ -23,6 +24,7 @@ export function NightActionScreen() {
       </header>
 
       <ActionPanel />
+      {yourRole.abilityPhase !== "night" ? <ReadyFooter /> : null}
     </div>
   );
 }

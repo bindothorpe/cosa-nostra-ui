@@ -1,0 +1,258 @@
+# Coolify Deployment Runbook
+
+This repo is a two-service Docker Compose stack:
+
+- `web` — Next.js standalone, port 3000
+- `realtime` — Node + WebSocket, port 3001, snapshot volume `/data`
+
+Coolify can deploy it directly from a Git repository with `compose.yaml` as the
+compose file. You do **not** need a separate database, Redis, or managed realtime
+service.
+
+---
+
+## 1. Prerequisites
+
+- VPS: Ubuntu 24.04, 4 GB RAM recommended (2 GB minimum), 2 vCPU, 40 GB SSD.
+- Coolify installed and reachable over HTTPS.
+- Domain control. Example: `game.example.com`.
+- GitHub/GitLab repository containing this project.
+- Ports 22, 80, 443 open on the VPS. Keep Coolify’s dashboard (8000) restricted
+  to trusted IPs or an SSH tunnel.
+
+DNS:
+
+| Type | Name | Value |
+|---|---|---|
+| A | `game.example.com` | VPS IPv4 |
+| AAAA | `game.example.com` | VPS IPv6, optional |
+
+---
+
+## 2. Create the Coolify resource
+
+1. Coolify → Project → **+ New Resource**.
+2. Choose **Docker Compose** → **Git repository**.
+3. Repository: this repo. Branch: `main` (or your deploy branch).
+4. Base directory: `/`.
+5. Docker Compose location: `/compose.yaml`.
+6. Build pack: Docker Compose (not Nixpacks).
+7. Save.
+
+Coolify builds both services with their Dockerfiles and keeps the `room-data`
+named volume.
+
+---
+
+## 3. Environment variables
+
+Set these on the Coolify resource (runtime):
+
+| Variable | Value |
+|---|---|
+| `ALLOWED_ORIGINS` | `https://game.example.com` |
+| `LOG_LEVEL` | `info` |
+| `ROOM_LOBBY_TTL_MS` | `7200000` |
+| `ROOM_GAMEOVER_TTL_MS` | `900000` |
+| `SNAPSHOT_DEBOUNCE_MS` | `250` |
+
+Build-time web variables:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_GAME_MODE` | `live` |
+| `NEXT_PUBLIC_REALTIME_BASE` | empty for same-origin `/rt` |
+
+`NEXT_PUBLIC_*` values are baked into the web image at build time. The web
+Dockerfile defaults `NEXT_PUBLIC_GAME_MODE` to `live`, so this is usually enough.
+For the two-subdomain fallback, set `NEXT_PUBLIC_REALTIME_BASE` before building.
+
+A copy is in `deploy/coolify.env.example`.
+
+---
+
+## 4. Domains and routing
+
+### Preferred: one hostname, `/rt` to realtime
+
+Assign per-service domains in Coolify:
+
+| Service | Domain value | Internal port |
+|---|---|---|
+| `web` | `https://game.example.com:3000` | 3000 |
+| `realtime` | `https://game.example.com:3001/rt` | 3001 |
+
+What happens:
+
+- `/` and app routes go to `web`.
+- `/rt/*` goes to `realtime`.
+- Coolify’s path prefix is stripped by default: `/rt/ws` arrives at realtime as
+  `/ws`, `/rt/health` as `/health`, `/rt/rooms` as `/rooms`.
+- The realtime server accepts **both** prefixed and stripped paths, so it works
+  either way. If you enable **Advanced → Proxy → Keep paths as-is**, `/rt/*` also
+  works unchanged.
+- The browser derives `wss://game.example.com/rt/ws` from the page origin. No
+  build-time URL is needed.
+
+The port in the domain value is the **internal container port**, not a public
+port. Coolify/Traefik terminates TLS and routes internally.
+
+Do not add host `ports:` mappings for these services. The compose stack uses
+`expose`, which is correct for proxy routing.
+
+### Fallback: two hostnames
+
+If your Coolify version has trouble with a path-prefixed Compose domain:
+
+| Service | Domain value | Internal port |
+|---|---|---|
+| `web` | `https://game.example.com:3000` | 3000 |
+| `realtime` | `https://rt.example.com:3001` | 3001 |
+
+Set:
+
+```dotenv
+NEXT_PUBLIC_REALTIME_BASE=https://rt.example.com/rt
+ALLOWED_ORIGINS=https://game.example.com
+```
+
+Add DNS for `rt.example.com`. The client then uses
+`wss://rt.example.com/rt/ws`. Same-origin path routing is preferred because it
+avoids a second hostname and a build-time URL.
+
+---
+
+## 5. Persistent room snapshots
+
+`compose.yaml` mounts the named volume `room-data` at `/data`. Coolify keeps
+named volumes across redeploys.
+
+- Snapshot files: `/data/rooms/<CODE>.json`
+- Write policy: temp file + fsync + atomic rename, debounced 250 ms
+- No database and no backups required for normal play; rooms are ephemeral
+- If the volume is lost, active rooms are lost. Finished games are disposable.
+
+Verify after deploy:
+
+```bash
+docker compose -f compose.yaml exec realtime ls -la /data/rooms
+```
+
+(or use Coolify’s container terminal).
+
+---
+
+## 6. Healthchecks and monitoring
+
+Compose already defines:
+
+| Service | Healthcheck |
+|---|---|
+| `web` | `GET /` on `127.0.0.1:3000` |
+| `realtime` | `GET /rt/health` on `127.0.0.1:3001` |
+
+Post-deploy checks:
+
+```bash
+curl -I https://game.example.com/
+curl https://game.example.com/rt/health
+```
+
+Expected:
+
+```json
+{"ok":true,"rooms":0,"sockets":0,"uptimeSeconds":1,"version":"0.1.0"}
+```
+
+Add external uptime monitors (Better Stack, UptimeRobot, etc.):
+
+- `https://game.example.com/` — app up
+- `https://game.example.com/rt/health` — realtime up
+
+Alert after two consecutive failures. `/rt/health` reports room/socket counts and
+process uptime.
+
+---
+
+## 7. Deploy, redeploy, rollback
+
+First deploy:
+
+1. Set env + domains.
+2. Click **Deploy**.
+3. Watch build logs for both images.
+4. Confirm web and realtime become healthy.
+5. Open the site from a phone and a laptop.
+6. Create a room, join from the second device, and confirm the player list updates.
+
+Redeploy during a game:
+
+- **Web redeploy:** safe. Sockets live in `realtime`.
+- **Realtime redeploy:** all sockets drop. Clients reconnect with backoff and
+  restore their seat from the snapshot. Avoid redeploying in the last minute of a
+  game.
+- One realtime replica only. Do not scale it horizontally.
+
+Rollback:
+
+- Redeploy the previous commit/image in Coolify.
+- Snapshot schema is versioned. If a release changes the snapshot shape
+  incompatibly, add migration before rolling forward.
+
+---
+
+## 8. Coolify-specific gotchas
+
+- Use a **Docker Compose** resource, not a single Application; this repo builds
+  two services.
+- Domains belong to individual Compose services.
+- The port in the domain is internal. Do not publish 3001 to the host.
+- Path prefixes are stripped by default; this app handles both forms.
+- If the realtime service is assigned a path but returns 404, check whether
+  Coolify forwarded `/rt/ws` or `/ws`; both are accepted, so a 404 usually means
+  the domain/port is attached to the wrong service.
+- Build variables (`NEXT_PUBLIC_*`) must be present at image build time. Runtime
+  env changes do not alter an already-built web bundle.
+- Keep the realtime container at exactly one replica. In-memory rooms are not
+  shareable across replicas.
+- `ALLOWED_ORIGINS` must include the exact public web origin, with scheme and no
+  trailing slash. Add `http://<LAN-IP>:8080` only for local testing.
+
+---
+
+## 9. Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| Web loads, socket fails | `ALLOWED_ORIGINS`, `/rt/ws` routing, TLS/WSS, proxy upgrade support |
+| 503 from Coolify | Domain attached to wrong service or wrong internal port |
+| 404 on `/rt/health` | Try `/health`; confirm realtime service domain |
+| `ROOM_NOT_FOUND` after redeploy | `room-data` volume missing or `DATA_DIR` wrong |
+| Players drop after idle | Proxy idle timeout vs 25s heartbeat; increase proxy idle timeout |
+| Older tab closed with 4001 | Newest-socket-wins policy; expected |
+| High memory | Stale rooms not cleaned up; inspect `/rt/health` and volume |
+| Role leak | Run projection tests; inspect sync frames in dev only |
+
+---
+
+## 10. Local production-like verification
+
+Before deploying, run the same stack locally:
+
+```bash
+docker compose -f compose.local.yaml up --build
+```
+
+Open `http://localhost:8080`. Caddy mirrors the one-host `/rt` routing.
+
+Full checks:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm test:integration
+pnpm test:e2e
+pnpm build
+pnpm build:realtime
+```
