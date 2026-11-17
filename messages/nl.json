@@ -26,8 +26,11 @@
     "noToken": "Er is geen stoel opgeslagen in deze browser.",
     "rateLimit": "Te veel acties. Wacht even en probeer het opnieuw.",
     "unknown": "Er ging iets mis. Probeer het opnieuw.",
-    "roomNotFound": "Deze kamer bestaat niet meer.",
+    "roomNotFound": "Die kamer bestaat niet.",
+    "roomFull": "Deze kamer is vol.",
+    "gameStarted": "Dit spel is al begonnen.",
     "invalidToken": "Deze stoel is niet meer geldig. Sluit opnieuw aan.",
+  "nameTaken": "Iemand gebruikt die naam al.",
     "notHost": "Alleen de host kan dat doen.",
     "wrongPhase": "Die actie is nu niet beschikbaar.",
     "notAlive": "Dode spelers kunnen dat niet doen.",
@@ -55,10 +58,13 @@
     "joinLabel": "Kamercode",
     "codePlaceholder": "ABCDE",
     "join": "Meedoen",
+    "rejoin": "Ga verder met lopend spel",
+    "rejoinMeta": "{code} · {phase}",
     "joinHint": "Vraag de host om de code van vijf letters.",
     "codeErrors": {
       "empty": "Vul een kamercode in.",
-      "length": "Kamercodes bestaan uit precies 5 letters."
+      "length": "Kamercodes bestaan uit precies 5 letters.",
+      "checkFailed": "Kon die kamer niet controleren. Probeer het opnieuw."
     },
     "or": "of",
     "create": "Kamer maken",
@@ -81,7 +87,9 @@
     "back": "Terug naar de tafel",
     "invalidTitle": "Die code klopt niet",
     "invalidBody": "Kamercodes bestaan uit precies 5 letters. Ga terug en probeer opnieuw.",
-    "joinError": "Deelnemen aan de kamer is niet gelukt. Probeer het opnieuw."
+    "checking": "Tafel controleren…",
+    "joinError": "Deelnemen aan de kamer is niet gelukt. Probeer het opnieuw.",
+    "nameTaken": "Deelnemen aan de kamer is niet gelukt. Iemand gebruikt die naam al."
   },
   "CreateRoom": {
     "steps": {

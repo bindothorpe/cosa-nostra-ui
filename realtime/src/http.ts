@@ -1,9 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 import type {
+  CheckRoomRequest,
   CreateRoomRequest,
   HealthInfo,
   JoinRoomRequest,
+  RoomAvailability,
   RoomIdentity,
 } from "./api-types";
 import type { Env } from "./env";
@@ -14,6 +16,7 @@ import type { Logger } from "./logger";
 export interface RoomApi {
   create(input: CreateRoomRequest): Promise<RoomIdentity>;
   join(code: string, name: string, token?: string): Promise<RoomIdentity>;
+  check(code: string, token?: string): RoomAvailability;
   health(): HealthInfo;
 }
 
@@ -34,8 +37,12 @@ const JoinSchema = z.object({
   token: z.string().min(1).max(512).optional(),
 });
 
+const CheckSchema = z.object({
+  token: z.string().min(1).max(512).optional(),
+});
+
 const MAX_BODY_BYTES = 16 * 1024;
-const JOIN_PATH = /^\/(?:rt\/)?rooms\/([A-Za-z0-9]{5})\/join$/;
+const ROOM_PATH = /^\/(?:rt\/)?rooms\/([A-Za-z0-9]{5})\/(join|check)$/;
 
 /**
  * Coolify strips a configured path prefix by default. Accept both `/rt/*` and
@@ -132,6 +139,7 @@ function allowedOrigin(
 export function createHttpHandler(deps: HttpDeps) {
   const createLimiter = new FixedWindowLimiter(5, 60 * 60_000);
   const joinLimiter = new FixedWindowLimiter(10, 60_000);
+  const checkLimiter = new FixedWindowLimiter(30, 60_000);
 
   return async function handleRequest(
     request: IncomingMessage,
@@ -191,14 +199,42 @@ export function createHttpHandler(deps: HttpDeps) {
         return;
       }
 
-      const joinMatch = JOIN_PATH.exec(pathname);
-      if (joinMatch && request.method === "POST") {
+      const roomMatch = ROOM_PATH.exec(pathname);
+      if (roomMatch && request.method === "POST") {
         if (!allowed) {
           throw forbidden("ORIGIN_NOT_ALLOWED", "Errors.originNotAllowed");
         }
 
+        const code = roomMatch[1].toUpperCase();
+        const action = roomMatch[2];
         const ip = clientIp(request, deps.env.trustProxy);
-        if (!joinLimiter.allow(`${ip}:${joinMatch[1].toUpperCase()}`)) {
+
+        if (action === "check") {
+          if (!checkLimiter.allow(`${ip}:${code}`)) {
+            throw tooManyRequests(
+              "ROOM_CHECK_RATE_LIMIT",
+              "Errors.roomCheckRateLimit",
+            );
+          }
+
+          const parsed = CheckSchema.safeParse(await readJson(request));
+          if (!parsed.success) {
+            throw new RealtimeError(
+              400,
+              "INVALID_BODY",
+              "Errors.invalidBody",
+            );
+          }
+
+          const availability = deps.api.check(
+            code,
+            (parsed.data as CheckRoomRequest).token,
+          );
+          sendJson(response, 200, availability, origin);
+          return;
+        }
+
+        if (!joinLimiter.allow(`${ip}:${code}`)) {
           throw tooManyRequests(
             "JOIN_RATE_LIMIT",
             "Errors.joinRateLimit",
@@ -215,11 +251,7 @@ export function createHttpHandler(deps: HttpDeps) {
         }
 
         const body = parsed.data as JoinRoomRequest;
-        const identity = await deps.api.join(
-          joinMatch[1].toUpperCase(),
-          body.name,
-          body.token,
-        );
+        const identity = await deps.api.join(code, body.name, body.token);
         sendJson(response, 200, identity, origin);
         return;
       }

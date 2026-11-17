@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMessages, useTranslations } from "next-intl";
-import { ArrowLeft, CircleAlert, KeyRound, LoaderCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { ArrowLeft, CircleAlert, LoaderCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocaleSwitcher } from "@/components/game/locale-switcher";
 import { useGame } from "@/components/game/game-provider";
 import { IdentityFields } from "@/components/room/identity-fields";
+import { ApiError, checkRoom } from "@/components/room/api";
+import { getToken } from "@/components/room/storage";
+import { joinFailureFrom } from "@/components/room/join-error";
 import { hasMessage } from "@/app/live/error-text";
+
+const IS_LIVE = process.env.NEXT_PUBLIC_GAME_MODE === "live";
+
+type CheckStatus = "checking" | "ready" | "redirecting";
 
 export function JoinClient() {
   const t = useTranslations("JoinRoom");
@@ -24,11 +31,44 @@ export function JoinClient() {
   const rawCode = (searchParams.get("code") ?? "").toUpperCase();
   const code = /^[A-Z]{5}$/.test(rawCode) ? rawCode : null;
 
+  const [status, setStatus] = useState<CheckStatus>(() =>
+    !code ? "redirecting" : IS_LIVE ? "checking" : "ready",
+  );
   const [name, setName] = useState("");
   const [allowComplexRoles, setAllowComplexRoles] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Verify the invitation before showing the form; send the user back to the
+  // landing page with a reason when the room is gone, full, or already started.
+  useEffect(() => {
+    if (!code) {
+      router.replace(`/?error=${rawCode ? "length" : "empty"}`);
+      return;
+    }
+
+    if (!IS_LIVE) return;
+
+    let cancelled = false;
+
+    async function verify(roomCode: string) {
+      try {
+        await checkRoom(roomCode, getToken(roomCode));
+        if (!cancelled) setStatus("ready");
+      } catch (caught) {
+        if (cancelled) return;
+        setStatus("redirecting");
+        router.replace(`/?error=${joinFailureFrom(caught)}`);
+      }
+    }
+
+    void verify(code);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code, rawCode, router]);
 
   function describeError(caught: unknown): string {
     if (typeof caught === "object" && caught !== null && "messageKey" in caught) {
@@ -70,6 +110,11 @@ export function JoinClient() {
       await joinRoom({ code, name: trimmed, allowComplexRoles });
       router.push("/lobby");
     } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "NAME_TAKEN") {
+        setSubmitError(null);
+        setNameError(t("nameTaken"));
+        return;
+      }
       setSubmitError(describeError(caught));
     } finally {
       setPending(false);
@@ -94,24 +139,15 @@ export function JoinClient() {
         <LocaleSwitcher />
       </header>
 
-      {!code ? (
-        <main className="flex flex-1 items-center py-8">
-          <div className="w-full space-y-4">
-            <Alert variant="destructive" className="p-4">
-              <KeyRound />
-              <AlertTitle>{t("invalidTitle")}</AlertTitle>
-              <AlertDescription>{t("invalidBody")}</AlertDescription>
-            </Alert>
-            <Link
-              href="/"
-              className={buttonVariants({
-                variant: "outline",
-                className: "h-12 w-full",
-              })}
-            >
-              {t("back")}
-            </Link>
-          </div>
+      {status !== "ready" ? (
+        <main
+          className="flex flex-1 flex-col items-center justify-center gap-3 py-8"
+          aria-busy="true"
+        >
+          <LoaderCircle className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            {t("checking")}
+          </p>
         </main>
       ) : (
         <main className="flex flex-1 flex-col justify-center py-8">
@@ -132,7 +168,7 @@ export function JoinClient() {
               {t("codeLabel")}
             </p>
             <div className="mt-2 flex justify-center gap-1.5">
-              {code.split("").map((letter, index) => (
+              {(code ?? "").split("").map((letter, index) => (
                 <span
                   key={`${letter}-${index}`}
                   className="grid size-11 place-items-center rounded-xl border border-border/80 bg-card/60 font-mono text-xl font-semibold shadow-sm"

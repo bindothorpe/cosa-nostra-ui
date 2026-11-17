@@ -37,6 +37,35 @@ function command(socket: TestSocket, id: string, payload: unknown): void {
   socket.send({ type: "command", id, command: payload });
 }
 
+const THREE_PLAYER_CONFIG = {
+  rolePreset: "custom",
+  minPlayers: 3,
+  maxPlayers: 3,
+  roleCounts: {
+    godfather: 1,
+    framer: 0,
+    detective: 1,
+    doctor: 1,
+    jester: 0,
+    villager: 0,
+  },
+};
+
+function checkRoom(
+  test: TestServer,
+  code: string,
+  token?: string,
+): Promise<Response> {
+  return fetch(`${test.baseUrl}/rt/rooms/${code}/check`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "http://localhost:3000",
+    },
+    body: JSON.stringify({ token }),
+  });
+}
+
 describe("realtime server", () => {
   let test: TestServer;
 
@@ -72,6 +101,97 @@ describe("realtime server", () => {
 
     expect(again.playerId).toBe(host.playerId);
     expect(again.token).toBe(host.token);
+  });
+
+  it("reports open rooms and rejects unknown room codes", async () => {
+    const host = await createRoom(test, "Alessia");
+
+    const open = await checkRoom(test, host.code);
+    expect(open.status).toBe(200);
+    expect(await open.json()).toEqual({ available: true });
+
+    const missing = await checkRoom(test, "ZZZZZ");
+    expect(missing.status).toBe(404);
+    const body = (await missing.json()) as {
+      error: string;
+      messageKey: string;
+    };
+    expect(body.error).toBe("ROOM_NOT_FOUND");
+    expect(body.messageKey).toBe("Errors.roomNotFound");
+  });
+
+  it("reports full rooms but lets a saved seat through", async () => {
+    const host = await createRoom(test, "Alessia", THREE_PLAYER_CONFIG);
+    await joinRoom(test, host.code, "Bruno");
+    await joinRoom(test, host.code, "Carla");
+
+    const full = await checkRoom(test, host.code);
+    expect(full.status).toBe(409);
+    const body = (await full.json()) as {
+      error: string;
+      messageKey: string;
+    };
+    expect(body.error).toBe("ROOM_FULL");
+    expect(body.messageKey).toBe("Errors.roomFull");
+
+    const saved = await checkRoom(test, host.code, host.token);
+    expect(saved.status).toBe(200);
+    const savedBody = (await saved.json()) as {
+      seat?: { playerId: string; name: string; phase: string; round: number };
+    };
+    expect(savedBody.seat).toMatchObject({
+      playerId: host.playerId,
+      name: "Alessia",
+      phase: "lobby",
+      round: 1,
+    });
+  });
+
+  it("reports started rooms unless the caller holds a seat", async () => {
+    const identities = [await createRoom(test, "P0", THREE_PLAYER_CONFIG)];
+    for (let index = 1; index < 3; index += 1) {
+      identities.push(
+        await joinRoom(test, identities[0].code, `P${index}`),
+      );
+    }
+
+    const sockets: TestSocket[] = [];
+    try {
+      for (const identity of identities) {
+        sockets.push(
+          await connectSocket(test, identity.code, identity.token),
+        );
+      }
+
+      await waitForView(sockets[0], (view) => view.phase === "lobby");
+      command(sockets[0], "start-1", { type: "startGame" });
+      await waitForView(sockets[0], (view) => view.phase === "roleReveal");
+
+      const started = await checkRoom(test, identities[0].code);
+      expect(started.status).toBe(409);
+      const body = (await started.json()) as {
+        error: string;
+        messageKey: string;
+      };
+      expect(body.error).toBe("GAME_STARTED");
+      expect(body.messageKey).toBe("Errors.gameStarted");
+
+      const saved = await checkRoom(
+        test,
+        identities[0].code,
+        identities[0].token,
+      );
+      expect(saved.status).toBe(200);
+      const savedBody = (await saved.json()) as {
+        seat?: { playerId: string; phase: string };
+      };
+      expect(savedBody.seat).toMatchObject({
+        playerId: identities[0].playerId,
+        phase: "roleReveal",
+      });
+    } finally {
+      await Promise.all(sockets.map((socket) => socket.close()));
+    }
   });
 
   it("accepts both /rt-prefixed and prefix-stripped proxy paths", async () => {

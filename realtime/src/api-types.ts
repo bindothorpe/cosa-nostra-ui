@@ -1,4 +1,4 @@
-import type { RoomConfig } from "../../game-core/types";
+import type { Phase, RoomConfig } from "../../game-core/types";
 
 export interface CreateRoomRequest {
   name: string;
@@ -8,6 +8,24 @@ export interface CreateRoomRequest {
 export interface JoinRoomRequest {
   name: string;
   token?: string;
+}
+
+export interface CheckRoomRequest {
+  token?: string;
+}
+
+export interface RoomSeat {
+  playerId: string;
+  name: string;
+  alive: boolean;
+  phase: Phase;
+  round: number;
+}
+
+export interface RoomAvailability {
+  available: true;
+  /** Present only when the supplied token matches a player in the room. */
+  seat?: RoomSeat;
 }
 
 export interface RoomIdentity {

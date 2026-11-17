@@ -135,13 +135,23 @@ test.describe("live game screens", () => {
       );
       expect(noCrash.every(Boolean)).toBe(true);
 
-      // Refresh/reconnect a non-host seat in the same phase.
+      // Reopen the saved seat from the landing page, then use the rejoin action.
       const index = 1;
       const identity = players[index];
       await opened[index].context.close();
-      const reconnected = await openLobby(browser, identity);
+      const reconnected = await openLanding(browser, identity);
       opened.push(reconnected);
 
+      const rejoinButton = reconnected.page.getByTestId("rejoin-game");
+      await expect(rejoinButton).toBeVisible({ timeout: 15_000 });
+      await expect(reconnected.page.getByTestId("rejoin-meta")).toContainText(
+        identity.code,
+      );
+      await expect(reconnected.page.getByTestId("rejoin-meta")).toContainText(
+        /night/i,
+      );
+
+      await rejoinButton.click();
       await reconnected.page.waitForURL("**/play", { timeout: 15_000 });
       await expect(
         reconnected.page.locator("[data-phase-timer]"),
@@ -206,6 +216,21 @@ async function openLobby(
   browser: Browser,
   identity: Identity,
 ): Promise<{ context: BrowserContext; page: Page }> {
+  return openWithSavedSeat(browser, identity, "/lobby");
+}
+
+async function openLanding(
+  browser: Browser,
+  identity: Identity,
+): Promise<{ context: BrowserContext; page: Page }> {
+  return openWithSavedSeat(browser, identity, "/");
+}
+
+async function openWithSavedSeat(
+  browser: Browser,
+  identity: Identity,
+  path: string,
+): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ baseURL: BASE_URL });
   await context.addInitScript(
     (seed) => {
@@ -220,6 +245,6 @@ async function openLobby(
     { code: identity.code, token: identity.token, name: identity.name },
   );
   const page = await context.newPage();
-  await page.goto("/lobby");
+  await page.goto(path);
   return { context, page };
 }

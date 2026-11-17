@@ -26,8 +26,11 @@
     "noToken": "No seat is saved in this browser.",
     "rateLimit": "Too many actions. Wait a moment and try again.",
     "unknown": "Something went wrong. Try again.",
-    "roomNotFound": "That room no longer exists.",
+    "roomNotFound": "That room does not exist.",
+    "roomFull": "This room is full.",
+    "gameStarted": "This game has already started.",
     "invalidToken": "This seat is no longer valid. Join the room again.",
+  "nameTaken": "Someone is already using that name.",
     "notHost": "Only the host can do that.",
     "wrongPhase": "That action isn't available right now.",
     "notAlive": "Dead players can't do that.",
@@ -55,10 +58,13 @@
     "joinLabel": "Room code",
     "codePlaceholder": "ABCDE",
     "join": "Join",
+    "rejoin": "Rejoin ongoing game",
+    "rejoinMeta": "{code} · {phase}",
     "joinHint": "Ask the host for the five-letter invitation code.",
     "codeErrors": {
       "empty": "Enter a room code.",
-      "length": "Room codes are exactly 5 letters."
+      "length": "Room codes are exactly 5 letters.",
+      "checkFailed": "Couldn't check that room. Try again."
     },
     "or": "or",
     "create": "Create room",
@@ -81,7 +87,9 @@
     "back": "Back to the table",
     "invalidTitle": "That code doesn't look right",
     "invalidBody": "Room codes are exactly 5 letters. Go back and try again.",
-    "joinError": "Could not join the room. Try again."
+    "checking": "Checking the table…",
+    "joinError": "Could not join the room. Try again.",
+    "nameTaken": "Could not join the room. Someone is already using that name."
   },
   "CreateRoom": {
     "steps": {

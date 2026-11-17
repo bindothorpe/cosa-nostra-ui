@@ -7,7 +7,12 @@ import {
   validateConfig,
 } from "../../game-core";
 import type { RoleId, RoomConfig, RoomState } from "../../game-core/types";
-import type { CreateRoomRequest, HealthInfo, RoomIdentity } from "./api-types";
+import type {
+  CreateRoomRequest,
+  HealthInfo,
+  RoomAvailability,
+  RoomIdentity,
+} from "./api-types";
 import type { Env } from "./env";
 import {
   RealtimeError,
@@ -108,6 +113,46 @@ export class RoomRegistry {
       "ROOM_CODE_EXHAUSTED",
       "Errors.roomCodeExhausted",
     );
+  }
+
+  /**
+   * Read-only join preflight: the room must exist and be in the lobby with a
+   * free seat, unless this browser already holds a seat token for it.
+   */
+  check(rawCode: string, token?: string): RoomAvailability {
+    const code = rawCode.toUpperCase();
+    const room = this.rooms.get(code);
+    if (!room) {
+      throw notFound("ROOM_NOT_FOUND", "Errors.roomNotFound");
+    }
+
+    if (token) {
+      const player = findPlayerByTokenHash(room.state, hashToken(token));
+      if (player) {
+        return {
+          available: true,
+          seat: {
+            playerId: player.id,
+            name: player.name,
+            alive: player.alive,
+            phase: room.state.phase,
+            round: room.state.round,
+          },
+        };
+      }
+    }
+
+    if (room.state.phase !== "lobby") {
+      throw conflict("GAME_STARTED", "Errors.gameStarted");
+    }
+
+    if (room.state.players.length >= room.state.config.maxPlayers) {
+      throw conflict("ROOM_FULL", "Errors.roomFull", {
+        max: room.state.config.maxPlayers,
+      });
+    }
+
+    return { available: true };
   }
 
   async join(

@@ -1,4 +1,4 @@
-import type { RoomConfig, RoomCode } from "@/game-core/types";
+import type { Phase, RoomConfig, RoomCode } from "@/game-core/types";
 
 export interface ApiErrorBody {
   error: string;
@@ -82,5 +82,29 @@ export function joinRoom(
   return request<RoomIdentity>(`/rooms/${encodeURIComponent(code)}/join`, {
     method: "POST",
     body: JSON.stringify({ name, token: token ?? undefined }),
+  });
+}
+
+export interface RoomSeat {
+  playerId: string;
+  name: string;
+  alive: boolean;
+  phase: Phase;
+  round: number;
+}
+
+export interface RoomAvailability {
+  available: boolean;
+  seat?: RoomSeat;
+}
+
+/** Read-only preflight: does the room exist, and can a fresh player join it? */
+export function checkRoom(
+  code: RoomCode,
+  token?: string | null,
+): Promise<RoomAvailability> {
+  return request<RoomAvailability>(`/rooms/${encodeURIComponent(code)}/check`, {
+    method: "POST",
+    body: JSON.stringify({ token: token ?? undefined }),
   });
 }
