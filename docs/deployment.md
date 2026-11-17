@@ -50,6 +50,118 @@ Only one process can own ports 80/443. Pick one:
 Do not run two proxies on the same ports. If nginx already owns 80/443, Coolify’s
 Traefik cannot bind and Coolify domain settings will not create routes.
 
+### Behind NAT with no control of 80/443: Cloudflare Tunnel
+
+Coolify’s **Servers → Cloudflare Tunnel** tab is for **SSH access** to the server,
+not for exposing applications. Application HTTP tunnels are configured through
+Coolify’s All Resources / Single Resource tunnel guides, or manually as below.
+
+If the Coolify host is behind a router and public 80/443 already goes to another
+machine, route only this app through a Cloudflare Tunnel. No router changes, no
+nginx edits, no Let’s Encrypt on the origin.
+
+Keep the compose loopback ports:
+
+```yaml
+web:      ports: ["127.0.0.1:3000:3000"]
+realtime: ports: ["127.0.0.1:3001:3001"]
+```
+
+On the Coolify host:
+
+```bash
+curl -L --output cloudflared.deb \
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+cloudflared tunnel login
+cloudflared tunnel create cosa-nostra
+cloudflared tunnel route dns cosa-nostra cosa-nostra.bindothorpe.com
+```
+
+Delete any existing `A`/`AAAA` record for `cosa-nostra.bindothorpe.com` first.
+`tunnel route dns` creates only that exact proxied CNAME. Do not use a wildcard
+route.
+
+`/etc/cloudflared/config.yml`:
+
+```yaml
+tunnel: <TUNNEL_UUID>
+credentials-file: /etc/cloudflared/<TUNNEL_UUID>.json
+ingress:
+  - hostname: cosa-nostra.bindothorpe.com
+    path: /rt/*
+    service: http://127.0.0.1:3001
+  - hostname: cosa-nostra.bindothorpe.com
+    service: http://127.0.0.1:3000
+  - service: http_status:404
+```
+
+Copy the credentials JSON into `/etc/cloudflared/`, validate, test, then install:
+
+```bash
+sudo mkdir -p /etc/cloudflared
+sudo cp /root/.cloudflared/<TUNNEL_UUID>.json /etc/cloudflared/
+sudo cp /root/.cloudflared/config.yml /etc/cloudflared/config.yml
+sudo cloudflared --config /etc/cloudflared/config.yml tunnel ingress validate
+sudo cloudflared --config /etc/cloudflared/config.yml tunnel run
+# Ctrl-C after verifying the public URL, then:
+sudo cloudflared service install
+sudo systemctl enable --now cloudflared
+```
+
+Set:
+
+```dotenv
+ALLOWED_ORIGINS=https://cosa-nostra.bindothorpe.com
+```
+
+Use Coolify proxy type **Custom**. The tunnel bypasses the host proxy entirely.
+Cloudflare terminates TLS; WebSockets work on `/rt/ws` through the tunnel.
+
+Scope and rollback:
+
+- `cloudflared` is outbound-only; it does not bind 80/443 or alter Docker/nginx.
+- It affects only the exact hostname routed to the tunnel.
+- Other subdomains keep their existing DNS/nginx paths.
+- Rollback: `sudo systemctl disable --now cloudflared`, delete the tunnel, then
+  restore the previous DNS `A` record for that hostname.
+- Cloudflare SSL/TLS: **Full**. Do not use Flexible.
+
+Existing tunnel service:
+
+If `cloudflared` is already installed for another tunnel (for example `n8n-local`),
+do **not** run `cloudflared service install` with this config — it may replace the
+existing service. Run a second, separately named systemd unit or a separate Docker
+container:
+
+```ini
+# /etc/systemd/system/cloudflared-cosa-nostra.service
+[Unit]
+Description=Cloudflare Tunnel cosa-nostra
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/cosa-nostra.yml tunnel run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now cloudflared-cosa-nostra
+sudo systemctl status cloudflared-cosa-nostra --no-pager
+cloudflared tunnel info cosa-nostra
+```
+
+`cloudflared tunnel info` must show at least one connection. An empty CONNECTIONS
+column means the DNS exists but no connector is running.
+
+
 ### Coolify control plane and apps on one server
 
 Co-locating Coolify with the apps is normal and fine for a small deployment. The
@@ -376,6 +488,9 @@ Rollback:
 | TLS cert name mismatch | Coolify still has the old domain or no router/cert for this hostname; update the web domain, enable HTTPS, redeploy, then check ACME logs |
 | ACME `NXDOMAIN` for `www.example.com` | Coolify’s WWW redirect is requesting a cert for a name with no DNS record. Disable the WWW redirect or add the `www` A/CNAME record |
 | `curl` shows `Server: nginx/...`, a default page, or another site’s cert | DNS points at a different server, or host nginx owns 80/443. Confirm the Coolify VPS public IP; check `ss -ltnp` and `docker ps` |
+| Local `Host` request returns 200, public request returns nginx/404 | Public 80/443 terminates on another machine/NAT ingress. The core Docker proxy is not publicly reachable; route through that nginx or use a tunnel/port forward |
+| ACME challenge returns 404/502 from nginx | Let’s Encrypt is validating against the public nginx, not the Coolify Traefik behind it. Fix the public ingress first |
+| Tunnel hostname does not resolve | The tunnel CNAME was not created. Run `cloudflared tunnel route dns`, or add `CNAME <name> <UUID>.cfargotunnel.com` (proxied) manually |
 | Web loads, socket fails | `ALLOWED_ORIGINS`, `/rt/ws` routing, TLS/WSS, proxy upgrade support |
 | 503 from Coolify | Domain attached to wrong service or wrong internal port |
 | 404 on `/rt/health` | Try `/health`; confirm realtime service domain |
