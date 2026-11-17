@@ -136,9 +136,19 @@ export class RoomSocket {
         return;
       }
 
+      if (event.code === CLOSE_UNKNOWN_ROOM) {
+        this.stopped = true;
+        this.detachLivenessListeners();
+        this.handlers.onStatus("error");
+        this.handlers.onError({
+          code: "ROOM_NOT_FOUND",
+          messageKey: "Errors.roomNotFound",
+        });
+        return;
+      }
+
       if (
         event.code === CLOSE_INVALID_TOKEN ||
-        event.code === CLOSE_UNKNOWN_ROOM ||
         event.code === CLOSE_CONFLICT
       ) {
         this.stopped = true;

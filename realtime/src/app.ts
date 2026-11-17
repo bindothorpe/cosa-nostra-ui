@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import { attachConnection } from "./connection";
 import type { Env } from "./env";
 import { canonicalPath, createHttpHandler } from "./http";
@@ -21,6 +21,11 @@ export interface StartServerOptions {
   version?: string;
   logger?: Logger;
 }
+
+/** Protocol-level ping cadence. Two missed pings terminate a socket. */
+export const WS_PING_INTERVAL_MS = 30_000;
+
+type LiveSocket = WebSocket & { isAlive?: boolean };
 
 export async function startServer({
   env,
@@ -66,8 +71,36 @@ export async function startServer({
   });
 
   wss.on("connection", (socket) => {
+    const live = socket as LiveSocket;
+    live.isAlive = true;
+    socket.on("pong", () => {
+      live.isAlive = true;
+    });
     attachConnection(socket, registry, logger);
   });
+
+  /**
+   * Browsers answer protocol pings from their networking layer, so this only
+   * proves the TCP connection is alive. It catches phones that vanish without
+   * a close frame; page-level activity is tracked separately via lastSeenAt.
+   */
+  const heartbeat = setInterval(() => {
+    logger.debug("ws.ping", { clients: wss.clients.size });
+    for (const client of wss.clients) {
+      const live = client as LiveSocket;
+      if (live.readyState !== WebSocket.OPEN) continue;
+
+      if (live.isAlive === false) {
+        logger.warn("ws.ping_timeout", { clients: wss.clients.size });
+        live.terminate();
+        continue;
+      }
+
+      live.isAlive = false;
+      live.ping();
+    }
+  }, WS_PING_INTERVAL_MS);
+  heartbeat.unref?.();
 
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -91,6 +124,8 @@ export async function startServer({
 
   const close = (): Promise<void> => {
     closing ??= (async () => {
+      clearInterval(heartbeat);
+
       for (const client of wss.clients) {
         client.close(1001, "server shutting down");
       }

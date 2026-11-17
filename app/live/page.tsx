@@ -16,6 +16,9 @@ import {
   type RoomIdentity,
 } from "@/components/room/api";
 import {
+  clearLastRoom,
+  clearToken,
+  getLastRoom,
   getToken,
   setLastRoom,
   setName,
@@ -108,6 +111,12 @@ export default function LiveLandingPage() {
       const identity = await joinRoom(code, displayName, getToken(code));
       storeIdentity(identity, displayName);
     } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "ROOM_NOT_FOUND") {
+        clearToken(code);
+        if (getLastRoom() === code) clearLastRoom();
+        router.replace("/");
+        return;
+      }
       setFormError(describeError(toError(caught)));
     } finally {
       setBusy(null);

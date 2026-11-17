@@ -254,10 +254,17 @@ export class RoomRegistry {
   private async cleanup(): Promise<void> {
     const now = Date.now();
     for (const room of [...this.rooms.values()]) {
-      if (room.isExpired(now)) {
-        this.logger.info("room.expired", { roomCode: room.code });
-        await this.deleteRoom(room.code);
-      }
+      const reason = room.expiryReason(now);
+      if (!reason) continue;
+
+      this.logger.info("room.expired", {
+        roomCode: room.code,
+        reason,
+        phase: room.state.phase,
+        emptyForMs: room.emptyForMs(now),
+        lastSeenAtByPlayer: room.lastSeenByPlayer,
+      });
+      await this.deleteRoom(room.code);
     }
   }
 
@@ -269,6 +276,7 @@ export class RoomRegistry {
       snapshotDebounceMs: this.env.snapshotDebounceMs,
       lobbyTtlMs: this.env.roomLobbyTtlMs,
       gameoverTtlMs: this.env.roomGameoverTtlMs,
+      emptyTtlMs: this.env.roomEmptyTtlMs,
       onEmpty: (code) => this.deleteRoom(code),
     });
   }

@@ -312,6 +312,7 @@ Set these on the Coolify resource (runtime):
 | `LOG_LEVEL` | `info` |
 | `ROOM_LOBBY_TTL_MS` | `7200000` |
 | `ROOM_GAMEOVER_TTL_MS` | `900000` |
+| `ROOM_EMPTY_TTL_MS` | `60000` |
 | `SNAPSHOT_DEBOUNCE_MS` | `250` |
 
 Build-time web variables:

@@ -21,8 +21,11 @@ interface RoomOptions {
   snapshotDebounceMs: number;
   lobbyTtlMs: number;
   gameoverTtlMs: number;
+  emptyTtlMs: number;
   onEmpty(code: string): Promise<void> | void;
 }
+
+export type RoomExpiryReason = "empty_ttl" | "lobby_ttl" | "gameover_ttl";
 
 interface Ack {
   playerId: PlayerId;
@@ -45,8 +48,19 @@ export class Room {
   private saveChain: Promise<void> = Promise.resolve();
   private closed = false;
 
+  /**
+   * When the last socket left. `null` while at least one player is connected.
+   * Runtime-only: on restart every room starts empty and gets a fresh grace
+   * window before the empty TTL applies.
+   */
+  private emptySince: number | null = null;
+
+  /** Last inbound frame per player. Runtime-only; logged, never projected. */
+  private readonly lastSeenAt = new Map<PlayerId, number>();
+
   constructor(private readonly options: RoomOptions) {
     this.state = options.state;
+    this.emptySince = Date.now();
   }
 
   get code(): string {
@@ -64,10 +78,20 @@ export class Room {
     }
 
     this.sockets.set(playerId, socket);
+    this.emptySince = null;
+    this.markSeen(playerId, Date.now(), "connect");
     this.setConnected(playerId, true);
     this.sendSync(socket, playerId);
     this.broadcast();
     this.scheduleSave();
+
+    this.options.logger.info("room.presence", {
+      roomCode: this.code,
+      playerId,
+      connected: true,
+      sockets: this.sockets.size,
+      lastSeenAt: this.lastSeenAt.get(playerId) ?? null,
+    });
   }
 
   /**
@@ -81,13 +105,36 @@ export class Room {
     this.scheduleSave();
   }
 
-  disconnect(playerId: PlayerId, socket: WebSocket): void {
+  disconnect(
+    playerId: PlayerId,
+    socket: WebSocket,
+    now = Date.now(),
+  ): void {
     if (this.sockets.get(playerId) !== socket) return;
 
     this.sockets.delete(playerId);
     this.setConnected(playerId, false);
     this.broadcast();
     this.scheduleSave();
+
+    if (this.sockets.size === 0) {
+      this.emptySince = now;
+      this.options.logger.info("room.empty", {
+        roomCode: this.code,
+        phase: this.state.phase,
+        emptySince: this.emptySince,
+        emptyTtlMs: this.options.emptyTtlMs,
+        lastSeenAtByPlayer: this.lastSeenByPlayer,
+      });
+    } else {
+      this.options.logger.info("room.presence", {
+        roomCode: this.code,
+        playerId,
+        connected: false,
+        sockets: this.sockets.size,
+        lastSeenAt: this.lastSeenAt.get(playerId) ?? null,
+      });
+    }
   }
 
   handleCommand(
@@ -98,6 +145,8 @@ export class Room {
   ): void {
     const socket = this.sockets.get(playerId);
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+    this.markSeen(playerId, now, "command");
 
     const previousVersion = this.findCommand(playerId, commandId);
     if (previousVersion !== undefined) {
@@ -148,22 +197,48 @@ export class Room {
     }
   }
 
-  handlePing(socket: WebSocket, sentAt: unknown): void {
+  handlePing(playerId: PlayerId, socket: WebSocket, sentAt: unknown): void {
+    const now = Date.now();
+    this.markSeen(playerId, now, "ping");
     this.send(socket, {
       type: "pong",
-      t: typeof sentAt === "number" ? sentAt : Date.now(),
-      serverNow: Date.now(),
+      t: typeof sentAt === "number" ? sentAt : now,
+      serverNow: now,
     });
   }
 
+  expiryReason(now = Date.now()): RoomExpiryReason | null {
+    if (
+      this.state.phase === "gameOver" &&
+      now - this.state.updatedAt > this.options.gameoverTtlMs
+    ) {
+      return "gameover_ttl";
+    }
+    if (
+      this.emptySince !== null &&
+      now - this.emptySince > this.options.emptyTtlMs
+    ) {
+      return "empty_ttl";
+    }
+    if (
+      this.state.phase === "lobby" &&
+      now - this.state.updatedAt > this.options.lobbyTtlMs
+    ) {
+      return "lobby_ttl";
+    }
+    return null;
+  }
+
   isExpired(now = Date.now()): boolean {
-    if (this.state.phase === "lobby") {
-      return now - this.state.updatedAt > this.options.lobbyTtlMs;
-    }
-    if (this.state.phase === "gameOver") {
-      return now - this.state.updatedAt > this.options.gameoverTtlMs;
-    }
-    return false;
+    return this.expiryReason(now) !== null;
+  }
+
+  emptyForMs(now = Date.now()): number {
+    return this.emptySince === null ? 0 : Math.max(0, now - this.emptySince);
+  }
+
+  get lastSeenByPlayer(): Record<PlayerId, number> {
+    return Object.fromEntries(this.lastSeenAt);
   }
 
   schedule(): void {
@@ -226,6 +301,20 @@ export class Room {
     this.scheduleSave();
     this.broadcast();
     this.schedule();
+  }
+
+  private markSeen(
+    playerId: PlayerId,
+    now: number,
+    trigger: "connect" | "command" | "ping",
+  ): void {
+    this.lastSeenAt.set(playerId, now);
+    this.options.logger.debug("room.last_seen", {
+      roomCode: this.code,
+      playerId,
+      lastSeenAt: now,
+      trigger,
+    });
   }
 
   private setConnected(playerId: PlayerId, connected: boolean): void {

@@ -9,10 +9,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { Command, PlayerId, PlayerView, RoomConfig } from "@/game-core/types";
 import { RoomSocket, type ConnectionStatus, type TransportError } from "./transport";
 import { offsetFrom, type ClockOffset } from "./clock";
-import { getToken, setLastRoom } from "./storage";
+import {
+  clearLastRoom,
+  clearToken,
+  getLastRoom,
+  getToken,
+  setLastRoom,
+} from "./storage";
 
 interface RoomActions {
   setReady(): void;
@@ -53,7 +60,19 @@ export function RoomProvider({
   const [clockOffset, setClockOffset] = useState<ClockOffset>(0);
   const [pendingCommandId, setPendingCommandId] = useState<string | null>(null);
 
+  const router = useRouter();
   const socketRef = useRef<RoomSocket | null>(null);
+
+  // The room was deleted (empty TTL / lobby TTL / game over). Drop the stale
+  // seat and send the player back to the landing page instead of leaving a
+  // dead room on screen.
+  useEffect(() => {
+    if (error?.code !== "ROOM_NOT_FOUND") return;
+
+    clearToken(code);
+    if (getLastRoom() === code) clearLastRoom();
+    router.replace("/");
+  }, [code, error, router]);
 
   useEffect(() => {
     const token = getToken(code);

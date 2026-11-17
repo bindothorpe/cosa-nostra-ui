@@ -973,6 +973,7 @@ interface Env {
   LOG_LEVEL: "debug" | "info" | "warn" | "error";
   ROOM_LOBBY_TTL_MS: number;    // default 2h
   ROOM_GAMEOVER_TTL_MS: number; // default 15m
+  ROOM_EMPTY_TTL_MS: number;    // default 1m, zero-socket rooms
   SNAPSHOT_DEBOUNCE_MS: number; // default 250
 }
 ```
@@ -1003,8 +1004,10 @@ interface Env {
   - if no players remain, delete the room;
   - in-game voluntary leave is rejected (`GAME_STARTED`); closing the tab is a disconnect.
 - `delete(code)`: close sockets, delete snapshot.
-- `cleanup()`: every 60 seconds, delete rooms whose last activity exceeds the lobby TTL
-  (before start) or game-over TTL (after `gameOver`).
+- `cleanup()`: every 60 seconds, delete rooms with no sockets for longer than the
+  empty TTL (default 1m), before start for longer than the lobby TTL, or after
+  `gameOver` for longer than the game-over TTL. Log the reason and per-player
+  `lastSeenAt`.
 - Only one instance. Do not add clustering.
 
 ### 10.4 Room class
@@ -1812,6 +1815,7 @@ Realtime:
 | `LOG_LEVEL` | `info` |
 | `ROOM_LOBBY_TTL_MS` | `7200000` |
 | `ROOM_GAMEOVER_TTL_MS` | `900000` |
+| `ROOM_EMPTY_TTL_MS` | `60000` |
 | `SNAPSHOT_DEBOUNCE_MS` | `250` |
 
 Web:

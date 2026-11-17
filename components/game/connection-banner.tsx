@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CircleAlert, LoaderCircle } from "lucide-react";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -12,7 +14,16 @@ import { useGame } from "./game-provider";
  */
 export function ConnectionBanner() {
   const t = useTranslations();
-  const { status, error } = useGame();
+  const router = useRouter();
+  const { status, error, resetGame } = useGame();
+
+  // A deleted room must not leave the player on a dead game screen. Every
+  // surface that can render `Errors.roomNotFound` renders this banner.
+  useEffect(() => {
+    if (error?.code !== "ROOM_NOT_FOUND") return;
+    resetGame();
+    router.replace("/");
+  }, [error, resetGame, router]);
 
   if (status === undefined) return null;
 

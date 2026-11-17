@@ -110,6 +110,10 @@ export function JoinClient() {
       await joinRoom({ code, name: trimmed, allowComplexRoles });
       router.push("/lobby");
     } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "ROOM_NOT_FOUND") {
+        router.replace("/?error=roomNotFound");
+        return;
+      }
       if (caught instanceof ApiError && caught.code === "NAME_TAKEN") {
         setSubmitError(null);
         setNameError(t("nameTaken"));

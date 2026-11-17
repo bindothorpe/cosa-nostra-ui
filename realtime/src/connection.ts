@@ -88,7 +88,7 @@ export function attachConnection(
     }
 
     if (frame.type === "ping") {
-      room.handlePing(socket, frame.t);
+      room.handlePing(bound.playerId, socket, frame.t);
     }
   });
 

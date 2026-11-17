@@ -9,6 +9,7 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   ROOM_LOBBY_TTL_MS: z.coerce.number().int().positive().default(7_200_000),
   ROOM_GAMEOVER_TTL_MS: z.coerce.number().int().positive().default(900_000),
+  ROOM_EMPTY_TTL_MS: z.coerce.number().int().positive().default(60_000),
   SNAPSHOT_DEBOUNCE_MS: z.coerce.number().int().nonnegative().default(250),
   TRUST_PROXY: z
     .enum(["true", "false"])
@@ -23,6 +24,7 @@ export interface Env {
   logLevel: "debug" | "info" | "warn" | "error";
   roomLobbyTtlMs: number;
   roomGameoverTtlMs: number;
+  roomEmptyTtlMs: number;
   snapshotDebounceMs: number;
   trustProxy: boolean;
 }
@@ -38,6 +40,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     logLevel: parsed.LOG_LEVEL,
     roomLobbyTtlMs: parsed.ROOM_LOBBY_TTL_MS,
     roomGameoverTtlMs: parsed.ROOM_GAMEOVER_TTL_MS,
+    roomEmptyTtlMs: parsed.ROOM_EMPTY_TTL_MS,
     snapshotDebounceMs: parsed.SNAPSHOT_DEBOUNCE_MS,
     trustProxy: parsed.TRUST_PROXY,
   };
