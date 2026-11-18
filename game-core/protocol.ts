@@ -22,6 +22,7 @@ const nightActionKindValues = [
   "roleblock",
   "shoot",
 ] as const;
+const dayActionKindValues = ["reveal"] as const;
 const tieRuleValues = ["no-elimination", "random", "revote"] as const;
 const alertKindValues = [
   "kill",
@@ -40,6 +41,7 @@ export const roleIdSchema = z.enum(ROLE_IDS);
 export const factionSchema = z.enum(factionValues);
 export const phaseSchema = z.enum(phaseValues);
 export const nightActionKindSchema = z.enum(nightActionKindValues);
+export const dayActionKindSchema = z.enum(dayActionKindValues);
 export const tieRuleSchema = z.enum(tieRuleValues);
 
 export const paramsSchema = z.record(
@@ -105,6 +107,12 @@ export const commandSchema = z.discriminatedUnion("type", [
       type: z.literal("submitNightAction"),
       kind: nightActionKindSchema,
       targetId: playerIdSchema,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("submitDayAction"),
+      kind: dayActionKindSchema,
     })
     .strict(),
   z
@@ -187,6 +195,7 @@ export const playerSummarySchema = z
     color: z.string(),
     roleId: roleIdSchema.nullable(),
     faction: factionSchema.nullable(),
+    roleRevealed: z.boolean(),
   })
   .strict();
 
@@ -276,6 +285,7 @@ export const playerViewSchema = z
     yourRole: roleIdSchema,
     yourFaction: factionSchema,
     yourAction: nightActionSchema.nullable(),
+    yourDayActions: z.array(dayActionKindSchema),
     yourTarget: playerSummarySchema.nullable(),
     yourShotsLeft: z.number().int().nonnegative(),
     mafiaKill: mafiaKillViewSchema.nullable().optional(),

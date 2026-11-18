@@ -16,6 +16,7 @@ import {
 } from "./roles";
 import type {
   Command,
+  DayActionKind,
   EliminationCause,
   EngineError,
   EngineErrorCode,
@@ -276,6 +277,7 @@ function assignRoles(state: RoomState): EngineError | null {
 
   state.executionerTargets = {};
   state.vigilanteShots = {};
+  state.revealedPlayerIds = [];
 
   for (const player of state.players) {
     if (player.roleId === "vigilante") {
@@ -794,7 +796,11 @@ function resolveVoting(state: RoomState, now: number): boolean {
     if (!targetId) {
       continue;
     }
-    const weight = player.roleId === "mayor" ? 2 : 1;
+    const weight =
+      player.roleId === "mayor" &&
+      state.revealedPlayerIds.includes(player.id)
+        ? 2
+        : 1;
     tally[targetId] = (tally[targetId] ?? 0) + weight;
   }
   state.voteTally = tally;
@@ -908,6 +914,9 @@ function removePlayerInPlace(state: RoomState, playerId: PlayerId): boolean {
   delete state.alertsByPlayer[playerId];
   delete state.executionerTargets[playerId];
   delete state.vigilanteShots[playerId];
+  state.revealedPlayerIds = state.revealedPlayerIds.filter(
+    (id) => id !== playerId,
+  );
   for (const [executionerId, targetId] of Object.entries(
     state.executionerTargets,
   )) {
@@ -985,6 +994,7 @@ export function createRoomState(input: CreateRoomStateInput): RoomState {
     pendingNightResult: null,
     executionerTargets: {},
     vigilanteShots: {},
+    revealedPlayerIds: [],
   };
 }
 
@@ -1235,6 +1245,7 @@ function handleStartGame(
   state.pendingNightResult = null;
   state.executionerTargets = {};
   state.vigilanteShots = {};
+  state.revealedPlayerIds = [];
   state.alertsByPlayer = Object.fromEntries(
     state.players.map((player) => [player.id, []] as const),
   );
@@ -1245,6 +1256,63 @@ function handleStartGame(
   }
 
   enterPhase(state, "roleReveal", now);
+  return null;
+}
+
+export function availableDayActions(
+  state: RoomState,
+  player: ServerPlayer,
+): DayActionKind[] {
+  if (state.phase !== "dayDiscussion" || !player.alive) {
+    return [];
+  }
+
+  if (
+    player.roleId === "mayor" &&
+    !state.revealedPlayerIds.includes(player.id)
+  ) {
+    return ["reveal"];
+  }
+
+  return [];
+}
+
+function handleSubmitDayAction(
+  state: RoomState,
+  playerId: PlayerId,
+  command: Extract<Command, { type: "submitDayAction" }>,
+  now: number,
+): EngineError | null {
+  if (state.phase !== "dayDiscussion") {
+    return engineError("WRONG_PHASE", "Errors.wrongPhase", {
+      phase: state.phase,
+    });
+  }
+
+  const player = state.players.find((candidate) => candidate.id === playerId);
+  if (!player || !player.alive) {
+    return engineError("NOT_ALIVE", "Errors.notAlive");
+  }
+
+  if (!availableDayActions(state, player).includes(command.kind)) {
+    return engineError("NOT_YOUR_TURN", "Errors.notYourTurn");
+  }
+
+  if (command.kind === "reveal") {
+    state.revealedPlayerIds.push(player.id);
+    addAlertToAllPlayers(
+      state,
+      {
+        kind: "system",
+        round: state.round,
+        titleKey: "Alerts.reveal.title",
+        detailKey: "Alerts.reveal.body",
+        params: { player: player.name, roleId: player.roleId },
+      },
+      now,
+    );
+  }
+
   return null;
 }
 
@@ -1532,6 +1600,9 @@ export function reduce(
       break;
     case "submitNightAction":
       commandError = handleSubmitNightAction(next, player.id, command, now);
+      break;
+    case "submitDayAction":
+      commandError = handleSubmitDayAction(next, player.id, command, now);
       break;
     case "castVote":
       commandError = handleCastVote(next, player.id, command.targetId);

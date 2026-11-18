@@ -4,6 +4,7 @@ import {
   ROLE_IDS,
   advancePhase,
   cloneRoomConfig,
+  project,
   reduce,
 } from "./index";
 import type { RoleId, RoomConfig, RoomState } from "./index";
@@ -519,8 +520,66 @@ describe("vigilante", () => {
 });
 
 describe("mayor", () => {
-  it("counts the mayor's vote twice and changes the leader", () => {
-    let state = forceVoting(roomFor(ALL_ROLES), NOW + 2_000);
+  it("counts the mayor's vote twice after revealing and changes the leader", () => {
+    let state = roomFor(ALL_ROLES);
+    state = advancePhase(state, NOW + 1_000);
+    state = advancePhase(state, NOW + 2_000);
+    state = advancePhase(state, NOW + 3_000);
+    expect(state.phase).toBe("dayDiscussion");
+
+    const mayor = playerWithRole(state, "mayor");
+    const otherVoter = playerWithRole(state, "detective");
+    const leadingTarget = playerWithRole(state, "bodyguard");
+    const trailingTarget = playerWithRole(state, "roleblocker");
+
+    state = run(
+      state,
+      mayor.id,
+      { type: "submitDayAction", kind: "reveal" },
+      NOW + 3_500,
+    );
+    expect(state.revealedPlayerIds).toContain(mayor.id);
+
+    state = forceVoting(state, NOW + 4_000);
+    state = castVotes(
+      state,
+      [
+        [mayor.id, leadingTarget.id],
+        [otherVoter.id, trailingTarget.id],
+      ] as const,
+      NOW + 5_000,
+    );
+
+    expect(state.phase).toBe("voting");
+    expect(state.voteTally).toBeNull();
+
+    const resolved = advancePhase(state, NOW + 6_000);
+
+    expect(resolved.phase).toBe("voteResult");
+    // Without the revealed mayor's double vote this would be a 1-1 tie.
+    expect(resolved.voteTally).toEqual({
+      [leadingTarget.id]: 2,
+      [trailingTarget.id]: 1,
+    });
+    expect(player(resolved, leadingTarget.id).alive).toBe(false);
+    expect(player(resolved, trailingTarget.id).alive).toBe(true);
+  });
+});
+
+function dayRoom(overrides: RoleOverrides = ALL_ROLES): RoomState {
+  let state = roomFor(overrides);
+  state = advancePhase(state, NOW + 1_000);
+  state = advancePhase(state, NOW + 2_000);
+  state = advancePhase(state, NOW + 3_000);
+  if (state.phase !== "dayDiscussion") {
+    throw new Error(`Expected dayDiscussion, got ${state.phase}`);
+  }
+  return state;
+}
+
+describe("day actions", () => {
+  it("leaves an unrevealed mayor's vote at weight one", () => {
+    let state = forceVoting(dayRoom(), NOW + 4_000);
     const mayor = playerWithRole(state, "mayor");
     const otherVoter = playerWithRole(state, "detective");
     const leadingTarget = playerWithRole(state, "bodyguard");
@@ -532,27 +591,149 @@ describe("mayor", () => {
         [mayor.id, leadingTarget.id],
         [otherVoter.id, trailingTarget.id],
       ] as const,
-      NOW + 3_000,
+      NOW + 5_000,
     );
+    const resolved = advancePhase(state, NOW + 6_000);
 
-    expect(state.phase).toBe("voting");
-    expect(state.voteTally).toBeNull();
-
-    const resolved = advancePhase(state, NOW + 4_000);
-
-    expect(resolved.phase).toBe("voteResult");
-    // Without the mayor's double vote this would be a 1-1 tie.
     expect(resolved.voteTally).toEqual({
-      [leadingTarget.id]: 2,
+      [leadingTarget.id]: 1,
       [trailingTarget.id]: 1,
     });
-    expect(player(resolved, leadingTarget.id).alive).toBe(false);
+    expect(player(resolved, leadingTarget.id).alive).toBe(true);
     expect(player(resolved, trailingTarget.id).alive).toBe(true);
+  });
+
+  it("reveals the mayor once, alerts everyone, and removes the day action", () => {
+    let state = dayRoom();
+    const mayor = playerWithRole(state, "mayor");
+    const detective = playerWithRole(state, "detective");
+
+    let detectiveView = project(state, detective.id);
+    expect(
+      detectiveView.players.find((entry) => entry.id === mayor.id),
+    ).toMatchObject({ roleId: null, roleRevealed: false });
+    expect(detectiveView.yourDayActions).toEqual([]);
+    expect(project(state, mayor.id).yourDayActions).toEqual(["reveal"]);
+
+    state = run(
+      state,
+      mayor.id,
+      { type: "submitDayAction", kind: "reveal" },
+      NOW + 4_000,
+    );
+
+    expect(state.revealedPlayerIds).toEqual([mayor.id]);
+    for (const player of state.players) {
+      expect(state.alertsByPlayer[player.id]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            titleKey: "Alerts.reveal.title",
+            params: { player: mayor.name, roleId: "mayor" },
+          }),
+        ]),
+      );
+    }
+
+    detectiveView = project(state, detective.id);
+    expect(
+      detectiveView.players.find((entry) => entry.id === mayor.id),
+    ).toMatchObject({ roleId: "mayor", roleRevealed: true });
+    expect(project(state, mayor.id).yourDayActions).toEqual([]);
+
+    const duplicate = reduce(
+      state,
+      mayor.id,
+      { type: "submitDayAction", kind: "reveal" },
+      NOW + 5_000,
+    );
+    expect(duplicate).toMatchObject({
+      ok: false,
+      error: { code: "NOT_YOUR_TURN" },
+    });
+  });
+
+  it("rejects day actions outside day discussion, from non-mayors, and from dead players", () => {
+    const revealRoom = roomFor(ALL_ROLES);
+    const mayor = playerWithRole(revealRoom, "mayor");
+
+    expect(
+      reduce(
+        revealRoom,
+        mayor.id,
+        { type: "submitDayAction", kind: "reveal" },
+        NOW + 4_000,
+      ),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "WRONG_PHASE" },
+    });
+
+    const day = dayRoom();
+    const detective = playerWithRole(day, "detective");
+    const dayMayor = playerWithRole(day, "mayor");
+
+    expect(
+      reduce(
+        day,
+        detective.id,
+        { type: "submitDayAction", kind: "reveal" },
+        NOW + 4_000,
+      ),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "NOT_YOUR_TURN" },
+    });
+
+    expect(
+      reduce(
+        markDead(day, [dayMayor.id]),
+        dayMayor.id,
+        { type: "submitDayAction", kind: "reveal" },
+        NOW + 4_000,
+      ),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "NOT_ALIVE" },
+    });
+
+    expect(
+      reduce(
+        forceVoting(day, NOW + 5_000),
+        dayMayor.id,
+        { type: "submitDayAction", kind: "reveal" },
+        NOW + 6_000,
+      ),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "WRONG_PHASE" },
+    });
+  });
+
+  it("lets duplicate mayors reveal independently", () => {
+    let state = dayRoom({
+      godfather: 1,
+      mayor: 2,
+      detective: 1,
+      villager: 2,
+    });
+    const mayors = playersWithRole(state, "mayor");
+
+    for (const [index, mayor] of mayors.entries()) {
+      state = run(
+        state,
+        mayor.id,
+        { type: "submitDayAction", kind: "reveal" },
+        NOW + 4_000 + index,
+      );
+    }
+
+    expect(state.revealedPlayerIds).toEqual(
+      expect.arrayContaining(mayors.map((mayor) => mayor.id)),
+    );
   });
 });
 
-describe("executioner", () => {
-  it("assigns a living non-mafia target at game start", () => {
+describe("executioner", () => {  it("assigns a living non-mafia target at game start", () => {
     const state = roomFor(ALL_ROLES);
     const executioner = playerWithRole(state, "executioner");
     const targetId = state.executionerTargets[executioner.id];

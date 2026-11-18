@@ -7,7 +7,13 @@ import type {
   ConnectionStatus,
   TransportError,
 } from "@/components/room/transport";
-import type { GameState, Player, RoleDef, RoomConfig } from "./types";
+import type {
+  DayActionKind,
+  GameState,
+  Player,
+  RoleDef,
+  RoomConfig,
+} from "./types";
 
 /**
  * Screen-facing game API. Shared by the mock and live providers so every
@@ -49,6 +55,7 @@ export interface GameContextValue {
   markReady: () => void;
   unready: () => void;
   submitAction: (targets: string[]) => void;
+  submitDayAction: (kind: DayActionKind) => void;
   castVote: (playerId: string) => void;
   advancePhase: () => void;
   resetGame: () => void;

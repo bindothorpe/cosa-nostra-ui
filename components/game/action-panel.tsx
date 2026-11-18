@@ -53,11 +53,20 @@ const clampToViewport: Modifier = ({ transform, draggingNodeRect }) => {
 };
 
 function ChipContent({ player }: { player: Player }) {
+  const roleT = useTranslations("Roles");
+
   return (
     <>
       <PlayerAvatar player={player} className="size-8" />
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">
-        {player.name}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">
+          {player.name}
+        </span>
+        {player.publicRoleId ? (
+          <span className="block text-[10px] text-muted-foreground">
+            {roleT(`${player.publicRoleId}.name`)}
+          </span>
+        ) : null}
       </span>
     </>
   );

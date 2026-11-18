@@ -26,6 +26,8 @@ export type Phase =
 
 export type AbilityPhase = "night" | "day" | "passive";
 
+export type DayActionKind = "reveal";
+
 export type RoleComplexity = "simple" | "medium" | "complex";
 
 export interface RoleDef {
@@ -59,6 +61,8 @@ export interface Player {
   alive: boolean;
   isYou?: boolean;
   color: string;
+  /** Role made public by a day action, if any. */
+  publicRoleId?: RoleId | null;
 }
 
 export interface WhisperMessage {
@@ -125,6 +129,8 @@ export interface GameState {
   alerts: GameAlert[];
   graveyard: GraveyardMessage[];
   graveyardUnread: number;
+  /** Day actions currently available to the viewer. */
+  yourDayActions: DayActionKind[];
   /** Executioner's assigned target, when the player has one. */
   targetName?: string;
   /** Vigilante's remaining shots. */

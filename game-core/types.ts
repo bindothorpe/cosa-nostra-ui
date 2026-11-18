@@ -39,6 +39,8 @@ export type NightActionKind =
   | "roleblock"
   | "shoot";
 
+export type DayActionKind = "reveal";
+
 export type TieRule = "no-elimination" | "random" | "revote";
 
 export type EliminationCause = "night" | "vote";
@@ -164,6 +166,8 @@ export interface RoomState {
   executionerTargets: Record<PlayerId, PlayerId>;
   /** Vigilante player id -> remaining shots. */
   vigilanteShots: Record<PlayerId, number>;
+  /** Players whose role has been publicly revealed by a day action. */
+  revealedPlayerIds: PlayerId[];
 }
 
 export interface PlayerSummary {
@@ -175,6 +179,8 @@ export interface PlayerSummary {
   color: string;
   roleId: RoleId | null;
   faction: Faction | null;
+  /** True when a day action has made this role public to the whole table. */
+  roleRevealed: boolean;
 }
 
 export interface PublicRoomConfig {
@@ -219,6 +225,8 @@ export interface PlayerView {
   yourRole: RoleId;
   yourFaction: Faction;
   yourAction: NightAction | null;
+  /** Day actions currently available to the viewer. */
+  yourDayActions: DayActionKind[];
   /** Executioner's assigned target; null for every other role. */
   yourTarget: PlayerSummary | null;
   /** Remaining vigilante shots; 0 for every other role. */
@@ -278,6 +286,7 @@ export type Command =
       kind: NightActionKind;
       targetId: PlayerId;
     }
+  | { type: "submitDayAction"; kind: DayActionKind }
   | { type: "castVote"; targetId: PlayerId }
   | { type: "sendWhisper"; toPlayerId: PlayerId; text: string }
   | { type: "sendGraveyardMessage"; text: string }

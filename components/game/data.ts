@@ -40,7 +40,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   bodyguard: { faction: "town", abilityPhase: "night", complexity: "medium" },
   roleblocker: { faction: "town", abilityPhase: "night", complexity: "medium" },
   vigilante: { faction: "town", abilityPhase: "night", complexity: "complex" },
-  mayor: { faction: "town", abilityPhase: "passive", complexity: "simple" },
+  mayor: { faction: "town", abilityPhase: "day", complexity: "simple" },
   villager: { faction: "town", abilityPhase: "passive", complexity: "simple" },
   jester: { faction: "neutral", abilityPhase: "passive", complexity: "complex" },
   executioner: {
@@ -371,6 +371,7 @@ export const INITIAL_STATE: GameState = {
   alerts: ALERT_SEED,
   graveyard: GRAVEYARD_SEED,
   graveyardUnread: 2,
+  yourDayActions: [],
 };
 
 export function playerName(players: Player[], id: string | null): string {

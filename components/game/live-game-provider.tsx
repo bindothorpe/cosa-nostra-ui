@@ -50,6 +50,7 @@ import { ROLES } from "./data";
 import { cloneRoomConfig, DEFAULT_ROOM_CONFIG } from "./room-config";
 import type {
   AlertKind,
+  DayActionKind,
   FactionCounts,
   GameAlert,
   GameState,
@@ -145,6 +146,7 @@ function toPlayer(summary: PlayerSummary, view: PlayerView): Player {
     alive: summary.alive,
     isYou: summary.isYou,
     color: summary.color,
+    publicRoleId: summary.roleRevealed ? summary.roleId : null,
   };
 }
 
@@ -218,6 +220,7 @@ function toGameState({
       alerts: [],
       graveyard: [],
       graveyardUnread: 0,
+      yourDayActions: [],
       canStart: false,
     };
   }
@@ -298,6 +301,7 @@ function toGameState({
     alerts,
     graveyard,
     graveyardUnread,
+    yourDayActions: [...view.yourDayActions],
     targetName: view.yourTarget?.name,
     shotsLeft: view.yourShotsLeft,
     canStart: view.canStart,
@@ -545,6 +549,11 @@ export function LiveGameProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const submitDayAction = useCallback(
+    (kind: DayActionKind) => send({ type: "submitDayAction", kind }),
+    [send],
+  );
+
   const advancePhase = useCallback(() => {
     // The server owns phase progression; the admin skip control is inert live.
   }, []);
@@ -685,6 +694,7 @@ export function LiveGameProvider({ children }: { children: ReactNode }) {
       markReady,
       unready,
       submitAction,
+      submitDayAction,
       castVote,
       advancePhase,
       resetGame,
@@ -718,6 +728,7 @@ export function LiveGameProvider({ children }: { children: ReactNode }) {
       markReady,
       unready,
       submitAction,
+      submitDayAction,
       castVote,
       advancePhase,
       resetGame,

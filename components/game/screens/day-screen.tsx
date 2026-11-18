@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Check, ChevronRight, MessageSquare, Sun } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGame } from "../game-provider";
+import { DayActionSection } from "../day-action-section";
 import { PlayerAvatar } from "../player-avatar";
 import { ReadyStatus } from "../ready-status";
 
@@ -13,6 +15,7 @@ export function DayScreen() {
   const whisperT = useTranslations("Whispers");
   const phaseT = useTranslations("Phase");
   const common = useTranslations("Common");
+  const roleT = useTranslations("Roles");
   const { state, markReady, isReady, waitingCount } = useGame();
 
   return (
@@ -56,7 +59,20 @@ export function DayScreen() {
               {player.name}
             </span>
             <span className="text-[10px] text-muted-foreground">
-              {player.isYou ? common("you") : player.alive ? "" : common("dead")}
+              {player.publicRoleId ? (
+                <Badge
+                  variant="secondary"
+                  className="h-5 px-1.5 text-[10px] font-normal"
+                >
+                  {roleT(`${player.publicRoleId}.name`)}
+                </Badge>
+              ) : player.isYou ? (
+                common("you")
+              ) : player.alive ? (
+                ""
+              ) : (
+                common("dead")
+              )}
             </span>
           </div>
         ))}
@@ -78,6 +94,8 @@ export function DayScreen() {
         </span>
         <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
       </Link>
+
+      <DayActionSection />
 
       <Button
         type="button"

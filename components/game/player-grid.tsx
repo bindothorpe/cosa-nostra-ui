@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PlayerAvatar } from "./player-avatar";
 import type { Player } from "./types";
@@ -22,6 +23,7 @@ export function PlayerGrid({
   excludeId?: string;
 }) {
   const t = useTranslations("Common");
+  const roleT = useTranslations("Roles");
 
   const visible = players.filter(
     (player) => player.id !== excludeId && (showDead || player.alive),
@@ -50,8 +52,21 @@ export function PlayerGrid({
               <span className="block truncate text-sm font-medium">
                 {player.name}
               </span>
-              <span className="block text-xs text-muted-foreground">
-                {player.isYou ? t("you") : player.alive ? "" : t("dead")}
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {player.publicRoleId ? (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 px-1.5 text-[10px] font-normal"
+                  >
+                    {roleT(`${player.publicRoleId}.name`)}
+                  </Badge>
+                ) : player.isYou ? (
+                  t("you")
+                ) : player.alive ? (
+                  ""
+                ) : (
+                  t("dead")
+                )}
               </span>
             </span>
             {selected ? <Check className="size-4 shrink-0" /> : null}

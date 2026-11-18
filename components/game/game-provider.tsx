@@ -311,6 +311,10 @@ export function MockGameProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const submitDayAction = useCallback(() => {
+    // Day actions are server-owned; the mock table has none.
+  }, []);
+
   const castVote = useCallback((playerId: string) => {
     setState((current) => {
       const self = current.players.find((player) => player.isYou);
@@ -502,6 +506,7 @@ export function MockGameProvider({ children }: { children: ReactNode }) {
       markReady,
       unready,
       submitAction,
+      submitDayAction,
       castVote,
       advancePhase,
       resetGame,
@@ -529,6 +534,7 @@ export function MockGameProvider({ children }: { children: ReactNode }) {
       markReady,
       unready,
       submitAction,
+      submitDayAction,
       castVote,
       advancePhase,
       resetGame,

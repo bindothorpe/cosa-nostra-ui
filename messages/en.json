@@ -312,10 +312,10 @@
     },
     "mayor": {
       "name": "Mayor",
-      "short": "One voice, two votes.",
-      "ability": "Passive. Your vote counts double.",
+      "short": "One voice, two votes—after revealing.",
+      "ability": "Once per game, during day discussion, reveal yourself as the Mayor. Your vote then counts double for the rest of the game.",
       "win": "Town wins when every Mafia member is eliminated.",
-      "tip": "Reveal your weight only when the vote is close. Until then, let the table underestimate you."
+      "tip": "Reveal only when the vote is close. Until then, your vote counts once and the table may underestimate you."
     },
     "executioner": {
       "name": "Executioner",
@@ -379,6 +379,17 @@
     "whisperHint": "Private words before the vote.",
     "aliveList": "At the table",
     "deadNote": "{name} is dead."
+  },
+  "DayActions": {
+    "title": "Day action",
+    "subtitle": "Use your role's daytime ability before the vote.",
+    "cardTitle": "Use your day action",
+    "cardHint": "Open your daytime options.",
+    "confirm": "Confirm action",
+    "reveal": {
+      "title": "Reveal as Mayor",
+      "description": "Reveal publicly. Your vote counts twice for the rest of the game. This cannot be undone."
+    }
   },
   "Vote": {
     "title": "Cast your vote",
@@ -486,6 +497,10 @@
     "unread": "{count} new",
     "earlier": "Earlier",
     "tonight": "Latest",
+    "reveal": {
+      "title": "Role revealed",
+      "body": "{player} revealed as the {role}."
+    },
     "killed": {
       "title": "Death at dawn",
       "body": "{player} was killed during the night.",

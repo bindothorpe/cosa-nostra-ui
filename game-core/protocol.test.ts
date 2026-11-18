@@ -42,6 +42,7 @@ describe("client frame parsing", () => {
       { type: "submitNightAction", kind: "guard", targetId: "p2" },
       { type: "submitNightAction", kind: "roleblock", targetId: "p2" },
       { type: "submitNightAction", kind: "shoot", targetId: "p2" },
+      { type: "submitDayAction", kind: "reveal" },
       { type: "castVote", targetId: "p2" },
       { type: "sendWhisper", toPlayerId: "p2", text: "hello" },
       { type: "sendGraveyardMessage", text: "hello" },

@@ -60,6 +60,7 @@ export class RoomRegistry {
       };
       state.executionerTargets ??= {};
       state.vigilanteShots ??= {};
+      state.revealedPlayerIds ??= [];
 
       const room = this.makeRoom(state);
       this.rooms.set(room.code, room);

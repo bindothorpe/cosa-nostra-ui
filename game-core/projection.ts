@@ -3,7 +3,7 @@ import {
   clonePhaseDurations,
   cloneRoomConfig,
 } from "./config";
-import { canStartGame } from "./engine";
+import { availableDayActions, canStartGame } from "./engine";
 import type {
   GraveyardMessage,
   NightAction,
@@ -22,6 +22,7 @@ function toSummary(
   player: ServerPlayer,
   viewerId: PlayerId,
   revealRole: boolean,
+  roleRevealed: boolean,
 ): PlayerSummary {
   return {
     id: player.id,
@@ -32,6 +33,7 @@ function toSummary(
     color: player.color,
     roleId: revealRole ? player.roleId : null,
     faction: revealRole ? player.faction : null,
+    roleRevealed,
   };
 }
 
@@ -93,6 +95,9 @@ export function project(
     if (viewerIsMafia && player.faction === "mafia") {
       return true;
     }
+    if (state.revealedPlayerIds.includes(player.id)) {
+      return true;
+    }
     return (
       state.config.revealRoleOnVote &&
       player.eliminatedAt?.cause === "vote"
@@ -100,7 +105,12 @@ export function project(
   };
 
   const summaries = state.players.map((player) =>
-    toSummary(player, viewer.id, revealRoleFor(player)),
+    toSummary(
+      player,
+      viewer.id,
+      revealRoleFor(player),
+      state.revealedPlayerIds.includes(player.id),
+    ),
   );
   const you = summaries.find((summary) => summary.id === viewer.id);
   if (!you) {
@@ -142,12 +152,20 @@ export function project(
       state.phase === "night"
         ? state.nightActions[viewer.id] ?? null
         : null,
+    yourDayActions: availableDayActions(state, viewer),
     yourTarget: (() => {
       if (viewer.roleId !== "executioner") return null;
       const targetId = state.executionerTargets[viewer.id];
       if (!targetId) return null;
       const target = state.players.find((player) => player.id === targetId);
-      return target ? toSummary(target, viewer.id, false) : null;
+      return target
+        ? toSummary(
+            target,
+            viewer.id,
+            false,
+            state.revealedPlayerIds.includes(target.id),
+          )
+        : null;
     })(),
     yourShotsLeft: state.vigilanteShots[viewer.id] ?? 0,
     yourVote: state.votes[viewer.id] ?? null,
