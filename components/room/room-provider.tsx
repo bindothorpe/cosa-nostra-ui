@@ -10,7 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { Command, PlayerId, PlayerView, RoomConfig } from "@/game-core/types";
+import type {
+  Command,
+  NightActionKind,
+  PlayerId,
+  PlayerView,
+  RoomConfig,
+} from "@/game-core/types";
 import { RoomSocket, type ConnectionStatus, type TransportError } from "./transport";
 import { offsetFrom, type ClockOffset } from "./clock";
 import {
@@ -25,10 +31,7 @@ interface RoomActions {
   setReady(): void;
   unsetReady(): void;
   startGame(): void;
-  submitNightAction(
-    kind: "kill" | "frame" | "investigate" | "protect",
-    targetId: PlayerId,
-  ): void;
+  submitNightAction(kind: NightActionKind, targetId: PlayerId): void;
   castVote(targetId: PlayerId): void;
   sendWhisper(toPlayerId: PlayerId, text: string): void;
   sendGraveyardMessage(text: string): void;

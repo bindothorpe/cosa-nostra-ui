@@ -25,6 +25,11 @@ export const ROLES: Record<RoleId, RoleDef> = {
     abilityPhase: "night",
     complexity: "complex",
   },
+  consigliere: {
+    faction: "mafia",
+    abilityPhase: "night",
+    complexity: "complex",
+  },
   framer: { faction: "mafia", abilityPhase: "night", complexity: "complex" },
   detective: {
     faction: "town",
@@ -32,8 +37,17 @@ export const ROLES: Record<RoleId, RoleDef> = {
     complexity: "medium",
   },
   doctor: { faction: "town", abilityPhase: "night", complexity: "medium" },
+  bodyguard: { faction: "town", abilityPhase: "night", complexity: "medium" },
+  roleblocker: { faction: "town", abilityPhase: "night", complexity: "medium" },
+  vigilante: { faction: "town", abilityPhase: "night", complexity: "complex" },
+  mayor: { faction: "town", abilityPhase: "passive", complexity: "simple" },
   villager: { faction: "town", abilityPhase: "passive", complexity: "simple" },
   jester: { faction: "neutral", abilityPhase: "passive", complexity: "complex" },
+  executioner: {
+    faction: "neutral",
+    abilityPhase: "passive",
+    complexity: "complex",
+  },
 };
 
 export const PLAYER_SEED: Player[] = [
@@ -286,6 +300,10 @@ export const ACTION_SLOT_RULES: Partial<Record<RoleId, ActionSlotRule[]>> = {
   ],
   detective: [{ excludeSelf: true }],
   doctor: [{ excludeSelf: true }],
+  consigliere: [{ excludeSelf: true }],
+  bodyguard: [{ excludeSelf: true }],
+  roleblocker: [{ excludeSelf: true }],
+  vigilante: [{ excludeSelf: true }],
 };
 
 export function canUseActionSlot(

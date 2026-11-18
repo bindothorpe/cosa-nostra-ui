@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { advancePhase, reduce } from "./index";
+import {
+  DEFAULT_ROOM_CONFIG,
+  advancePhase,
+  cloneRoomConfig,
+  defaultRoleCountsFor,
+  reduce,
+} from "./index";
 import type { RoomState } from "./index";
 import {
   NOW,
@@ -15,6 +21,26 @@ import {
 
 function enterNight(count = 8): RoomState {
   return advancePhase(startedRoom(count), NOW + 1_000);
+}
+
+/**
+ * Twelve-player custom room with the consigliere removed so there are two
+ * framers and the senior living mafia is always a framer after the godfather
+ * dies. The default 12-player composition only has one framer.
+ */
+function twoFramerRoom(): RoomState {
+  const counts = defaultRoleCountsFor(12);
+  if (!counts) {
+    throw new Error("Expected a 12-player default composition");
+  }
+
+  return startedRoom(12, {
+    config: {
+      ...cloneRoomConfig(DEFAULT_ROOM_CONFIG),
+      rolePreset: "custom",
+      roleCounts: { ...counts, consigliere: 0, framer: 2 },
+    },
+  });
 }
 
 function killGodfather(state: RoomState): RoomState {
@@ -42,6 +68,7 @@ describe("night action authority", () => {
       deaths: [victim.id],
       saved: [],
       investigations: {},
+      exactInvestigations: {},
     });
     expect(player(state, victim.id).alive).toBe(false);
     expect(player(state, victim.id).eliminatedAt).toEqual({
@@ -71,7 +98,7 @@ describe("night action authority", () => {
   });
 
   it("allows only the senior living framer to kill after the godfather dies", () => {
-    const night = killGodfather(startedRoom(12));
+    const night = killGodfather(twoFramerRoom());
     const framers = playersWithRole(night, "framer").sort(
       (first, second) => first.joinedAt - second.joinedAt,
     );
@@ -99,7 +126,7 @@ describe("night action authority", () => {
   });
 
   it("lets the senior framer replace a frame with a kill", () => {
-    let state = killGodfather(startedRoom(10));
+    let state = killGodfather(twoFramerRoom());
     const senior = playersWithRole(state, "framer").sort(
       (first, second) => first.joinedAt - second.joinedAt,
     )[0];
@@ -126,11 +153,14 @@ describe("night action authority", () => {
   });
 
   it("rejects wrong action kinds for each role", () => {
-    const state = enterNight();
+    const state = enterNight(10);
     const detective = playerWithRole(state, "detective");
     const godfather = playerWithRole(state, "godfather");
     const villager = playerWithRole(state, "villager");
     const jester = playerWithRole(state, "jester");
+    const bodyguard = playerWithRole(state, "bodyguard");
+    const roleblocker = playerWithRole(state, "roleblocker");
+    const vigilante = playerWithRole(state, "vigilante");
     const target = playerWithRole(state, "doctor");
 
     expect(
@@ -168,10 +198,37 @@ describe("night action authority", () => {
         NOW + 2_000,
       ),
     ).toMatchObject({ ok: false, error: { code: "NOT_YOUR_TURN" } });
+
+    expect(
+      reduce(
+        state,
+        bodyguard.id,
+        { type: "submitNightAction", kind: "protect", targetId: target.id },
+        NOW + 2_000,
+      ),
+    ).toMatchObject({ ok: false, error: { code: "NOT_YOUR_TURN" } });
+
+    expect(
+      reduce(
+        state,
+        roleblocker.id,
+        { type: "submitNightAction", kind: "shoot", targetId: target.id },
+        NOW + 2_000,
+      ),
+    ).toMatchObject({ ok: false, error: { code: "NOT_YOUR_TURN" } });
+
+    expect(
+      reduce(
+        state,
+        vigilante.id,
+        { type: "submitNightAction", kind: "guard", targetId: target.id },
+        NOW + 2_000,
+      ),
+    ).toMatchObject({ ok: false, error: { code: "NOT_YOUR_TURN" } });
   });
 
   it("rejects self-targeting and dead targets", () => {
-    const state = enterNight();
+    const state = enterNight(10);
     const godfather = playerWithRole(state, "godfather");
     const deadVillager = playerWithRole(state, "villager");
     const withDead = forceNight(markDead(state, [deadVillager.id]));
@@ -181,6 +238,9 @@ describe("night action authority", () => {
       { roleId: "framer", kind: "frame" },
       { roleId: "detective", kind: "investigate" },
       { roleId: "doctor", kind: "protect" },
+      { roleId: "bodyguard", kind: "guard" },
+      { roleId: "roleblocker", kind: "roleblock" },
+      { roleId: "vigilante", kind: "shoot" },
     ] as const;
 
     for (const selfCase of selfCases) {
@@ -276,6 +336,7 @@ describe("doctor protection", () => {
       deaths: [],
       saved: [victim.id],
       investigations: {},
+      exactInvestigations: {},
     });
     expect(player(state, victim.id).alive).toBe(true);
     expect(
@@ -286,7 +347,7 @@ describe("doctor protection", () => {
   });
 
   it("does not save a different target", () => {
-    let state = enterNight();
+    let state = enterNight(13);
     const godfather = playerWithRole(state, "godfather");
     const doctor = playerWithRole(state, "doctor");
     const victim = playerWithRole(state, "villager");
@@ -418,7 +479,7 @@ describe("detective investigation", () => {
   });
 
   it("allows multiple framers to frame different targets", () => {
-    let state = enterNight(12);
+    let state = advancePhase(twoFramerRoom(), NOW + 1_000);
     const [firstFramer, secondFramer] = playersWithRole(state, "framer");
     const firstTarget = playerWithRole(state, "villager");
     const secondTarget = playerWithRole(state, "doctor");

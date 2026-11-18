@@ -20,11 +20,17 @@ const FULL_CONFIG = {
   maxPlayers: 3,
   roleCounts: {
     godfather: 1,
+    consigliere: 0,
     framer: 0,
     detective: 1,
     doctor: 1,
-    jester: 0,
+    bodyguard: 0,
+    roleblocker: 0,
+    vigilante: 0,
+    mayor: 0,
     villager: 0,
+    jester: 0,
+    executioner: 0,
   },
 } as const;
 

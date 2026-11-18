@@ -49,6 +49,7 @@
     "notImplemented": "That action isn't available yet.",
     "badFrame": "A message couldn't be processed. Try again.",
     "helloRequired": "The connection didn't start correctly. Reload the page.",
+    "noShotsLeft": "You have no vigilante shots left.",
     "internal": "Something went wrong on the server. Try again."
   },
   "Landing": {
@@ -94,6 +95,7 @@
   "CreateRoom": {
     "steps": {
       "table": "Table",
+      "roles": "Roles",
       "timers": "Timers",
       "identity": "You"
     },
@@ -101,6 +103,10 @@
       "table": {
         "title": "Set the table",
         "subtitle": "Choose how many seats, and how the factions split."
+      },
+      "roles": {
+        "title": "Pick the cast",
+        "subtitle": "Randomly fill each faction from the roles you allow. Shuffle until the table feels right."
       },
       "timers": {
         "title": "Set the pace",
@@ -121,13 +127,21 @@
     "custom": "Custom",
     "total": "Total",
     "rolesPreview": "Roles in play",
+    "rolesMovedHint": "Role selection is the next step.",
+    "allowDuplicates": "Allow duplicates",
+    "allowDuplicatesHint": "Seats can repeat any enabled role except the Godfather.",
+    "duplicatesRequired": "Duplicates are required: the enabled roles cannot fill every seat without repeats.",
+    "rolesDefaultHint": "All roles are eligible. Each faction's seats are filled randomly from its full role list.",
+    "rolesSeats": "{count, plural, =1 {1 seat} other {# seats}}",
+    "rolesShuffle": "Shuffle",
+    "rolesGodfatherLocked": "Godfather is always included exactly once.",
     "decreaseFaction": "One fewer {faction}",
     "increaseFaction": "One more {faction}",
     "errors": {
       "sum": "Faction totals must add up to {count}.",
       "mafia": "At least one Mafia seat is required.",
       "town": "At least one Town seat is required.",
-      "neutral": "At most one Neutral seat is allowed."
+      "neutral": "At most two Neutral seats are allowed."
     },
     "timersTitle": "Phase timers",
     "timersHint": "Default keeps the game moving. Custom gives you exact control.",
@@ -146,6 +160,7 @@
     "title": "Room setup",
     "seats": "{count} seats",
     "factions": "Factions",
+    "roles": "Roles",
     "timers": "Timers",
     "default": "Default",
     "custom": "Custom",
@@ -215,6 +230,8 @@
     "tap": "Tap to view role",
     "tapHide": "Tap to hide role",
     "pressHint": "Press and hold to reveal",
+    "target": "Your target",
+    "shots": "{count, plural, =1 {1 shot left} other {# shots left}}",
     "tip": "Tip"
   },
   "Faction": {
@@ -264,6 +281,48 @@
       "ability": "No night action. If the table votes you out, you win immediately.",
       "win": "Get eliminated by a day vote.",
       "tip": "Act suspicious, but not so obviously that the table dismisses you as a joke."
+    },
+    "consigliere": {
+      "name": "Consigliere",
+      "short": "Knows exactly who everyone is.",
+      "ability": "Each night, investigate one player and learn their exact role. Framing and Godfather immunity do not fool you.",
+      "win": "Mafia wins when no Town members remain, or nothing can stop them.",
+      "tip": "Your results are precise. Share only what moves suspicion where the crew needs it, and never reveal that you know a role exactly."
+    },
+    "bodyguard": {
+      "name": "Bodyguard",
+      "short": "Takes the bullet meant for someone else.",
+      "ability": "Each night, guard one player. If that player is attacked, you die instead.",
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Guard the players the Mafia fear most. Your life is worth spending on the right person."
+    },
+    "roleblocker": {
+      "name": "Roleblocker",
+      "short": "Shuts down a night action.",
+      "ability": "Each night, block one player's night action. Roleblocks happen at the same time.",
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Block players whose silence costs the Mafia most. A blocked kill can save the whole night."
+    },
+    "vigilante": {
+      "name": "Vigilante",
+      "short": "One bullet. One chance.",
+      "ability": "You have one night kill for the whole game. Choose carefully.",
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "One shot is all you get. Shooting a Town member hands the Mafia a free night."
+    },
+    "mayor": {
+      "name": "Mayor",
+      "short": "One voice, two votes.",
+      "ability": "Passive. Your vote counts double.",
+      "win": "Town wins when every Mafia member is eliminated.",
+      "tip": "Reveal your weight only when the vote is close. Until then, let the table underestimate you."
+    },
+    "executioner": {
+      "name": "Executioner",
+      "short": "One target. One obsession.",
+      "ability": "Passive. You are assigned one target at the start of the game.",
+      "win": "Win when your assigned target is voted out.",
+      "tip": "Push the vote toward your target without looking like you have something to gain."
     }
   },
   "Action": {
@@ -283,13 +342,20 @@
     "open": "Open action",
     "close": "Close action",
     "unavailable": "No action available right now.",
+    "shotsLeft": "Shots left: {count}",
     "sentences": {
       "godfather": "Order {first} to kill {second}",
       "framer": "Frame {first}, then {second}, so investigations show them as Mafia",
       "detective": "Investigate {first} and learn their faction",
       "doctor": "Protect {first} from death tonight",
+      "consigliere": "Investigate {first} and learn their exact role",
+      "bodyguard": "Guard {first} tonight; if they are attacked, you die instead",
+      "roleblocker": "Block {first}'s night action. Roleblocks happen at the same time",
+      "vigilante": "Shoot {first} tonight. You only get one shot",
       "villager": "You have no action tonight",
-      "jester": "You have no action tonight"
+      "jester": "You have no action tonight",
+      "mayor": "You have no action tonight; your vote counts double",
+      "executioner": "You have no action tonight; get your target voted out"
     },
     "rosterTitle": "Players",
     "dragHint": "Drag a player into a blank. Drag between blanks to reorder.",
@@ -439,6 +505,27 @@
       "success": "{player} was eliminated.",
       "saved": "Your target survived the night."
     },
+    "consigliere": {
+      "title": "Consigliere report",
+      "body": "{player} is the {role}."
+    },
+    "blocked": {
+      "title": "Action blocked",
+      "body": "Someone blocked your night action."
+    },
+    "bodyguard": {
+      "title": "You took the hit",
+      "body": "You died protecting {player}."
+    },
+    "guarded": {
+      "title": "Protected",
+      "body": "A bodyguard shielded you from an attack."
+    },
+    "vigilante": {
+      "title": "Vigilante shot",
+      "success": "{player} was eliminated.",
+      "saved": "Your target survived the night."
+    },
     "vote": {
       "title": "Vote result",
       "eliminated": "{player} was eliminated.",
@@ -448,7 +535,8 @@
       "title": "Game over",
       "town": "The Town wins.",
       "mafia": "The Mafia wins.",
-      "jester": "{player} wins as the Jester."
+      "jester": "{player} wins as the Jester.",
+      "executioner": "{player} wins as the Executioner."
     },
     "seed": {
       "killedTitle": "Lucia was found dead",

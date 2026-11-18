@@ -14,20 +14,76 @@ import {
 import type { RoleId, RoomConfig, TieRule } from "./index";
 
 const EXPECTED_TABLE: Record<number, Record<RoleId, number>> = {
-  3: { godfather: 1, framer: 0, detective: 1, doctor: 1, jester: 0, villager: 0 },
-  4: { godfather: 1, framer: 0, detective: 1, doctor: 1, jester: 0, villager: 1 },
-  5: { godfather: 1, framer: 0, detective: 1, doctor: 1, jester: 1, villager: 1 },
-  6: { godfather: 1, framer: 0, detective: 1, doctor: 1, jester: 1, villager: 2 },
-  7: { godfather: 1, framer: 0, detective: 1, doctor: 1, jester: 1, villager: 3 },
-  8: { godfather: 1, framer: 1, detective: 1, doctor: 1, jester: 1, villager: 3 },
-  9: { godfather: 1, framer: 1, detective: 1, doctor: 1, jester: 1, villager: 4 },
-  10: { godfather: 1, framer: 1, detective: 1, doctor: 1, jester: 1, villager: 5 },
-  11: { godfather: 1, framer: 1, detective: 1, doctor: 1, jester: 1, villager: 6 },
-  12: { godfather: 1, framer: 2, detective: 1, doctor: 1, jester: 1, villager: 6 },
-  13: { godfather: 1, framer: 2, detective: 1, doctor: 1, jester: 1, villager: 7 },
-  14: { godfather: 1, framer: 2, detective: 1, doctor: 1, jester: 1, villager: 8 },
-  15: { godfather: 1, framer: 2, detective: 1, doctor: 1, jester: 1, villager: 9 },
-  16: { godfather: 1, framer: 3, detective: 1, doctor: 1, jester: 1, villager: 9 },
+  3: {
+    godfather: 1, consigliere: 0, framer: 0,
+    detective: 1, doctor: 1, bodyguard: 0, roleblocker: 0, vigilante: 0, mayor: 0,
+    villager: 0, jester: 0, executioner: 0,
+  },
+  4: {
+    godfather: 1, consigliere: 0, framer: 0,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 0, vigilante: 0, mayor: 0,
+    villager: 0, jester: 0, executioner: 0,
+  },
+  5: {
+    godfather: 1, consigliere: 0, framer: 0,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 0, vigilante: 0, mayor: 0,
+    villager: 0, jester: 1, executioner: 0,
+  },
+  6: {
+    godfather: 1, consigliere: 0, framer: 0,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 0, mayor: 0,
+    villager: 0, jester: 1, executioner: 0,
+  },
+  7: {
+    godfather: 1, consigliere: 0, framer: 0,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 0, mayor: 0,
+    villager: 1, jester: 1, executioner: 0,
+  },
+  8: {
+    godfather: 1, consigliere: 0, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 0, mayor: 0,
+    villager: 1, jester: 1, executioner: 0,
+  },
+  9: {
+    godfather: 1, consigliere: 0, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 0, mayor: 0,
+    villager: 1, jester: 1, executioner: 1,
+  },
+  10: {
+    godfather: 1, consigliere: 0, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 0,
+    villager: 1, jester: 1, executioner: 1,
+  },
+  11: {
+    godfather: 1, consigliere: 0, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 1, jester: 1, executioner: 1,
+  },
+  12: {
+    godfather: 1, consigliere: 1, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 1, jester: 1, executioner: 1,
+  },
+  13: {
+    godfather: 1, consigliere: 1, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 2, jester: 1, executioner: 1,
+  },
+  14: {
+    godfather: 1, consigliere: 1, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 3, jester: 1, executioner: 1,
+  },
+  15: {
+    godfather: 1, consigliere: 1, framer: 1,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 4, jester: 1, executioner: 1,
+  },
+  16: {
+    godfather: 1, consigliere: 1, framer: 2,
+    detective: 1, doctor: 1, bodyguard: 1, roleblocker: 1, vigilante: 1, mayor: 1,
+    villager: 4, jester: 1, executioner: 1,
+  },
 };
 
 function configWith(overrides: Partial<RoomConfig>): RoomConfig {
@@ -49,39 +105,39 @@ describe("role metadata", () => {
   it("exposes every role with faction and night activity", () => {
     expect([...ROLE_IDS]).toEqual([
       "godfather",
+      "consigliere",
       "framer",
       "detective",
       "doctor",
+      "bodyguard",
+      "roleblocker",
+      "vigilante",
+      "mayor",
       "villager",
       "jester",
+      "executioner",
     ]);
 
-    expect(ROLE_META.godfather).toMatchObject({
-      faction: "mafia",
-      activeAtNight: true,
-    });
-    expect(ROLE_META.framer).toMatchObject({
-      faction: "mafia",
-      activeAtNight: true,
-    });
-    expect(ROLE_META.detective).toMatchObject({
-      faction: "town",
-      activeAtNight: true,
-    });
-    expect(ROLE_META.doctor).toMatchObject({
-      faction: "town",
-      activeAtNight: true,
-    });
-    expect(ROLE_META.villager).toMatchObject({
-      faction: "town",
-      activeAtNight: false,
-    });
-    expect(ROLE_META.jester).toMatchObject({
-      faction: "neutral",
-      activeAtNight: false,
-    });
+    const expectedMeta: Record<
+      RoleId,
+      { faction: "mafia" | "town" | "neutral"; activeAtNight: boolean }
+    > = {
+      godfather: { faction: "mafia", activeAtNight: true },
+      consigliere: { faction: "mafia", activeAtNight: true },
+      framer: { faction: "mafia", activeAtNight: true },
+      detective: { faction: "town", activeAtNight: true },
+      doctor: { faction: "town", activeAtNight: true },
+      bodyguard: { faction: "town", activeAtNight: true },
+      roleblocker: { faction: "town", activeAtNight: true },
+      vigilante: { faction: "town", activeAtNight: true },
+      mayor: { faction: "town", activeAtNight: false },
+      villager: { faction: "town", activeAtNight: false },
+      jester: { faction: "neutral", activeAtNight: false },
+      executioner: { faction: "neutral", activeAtNight: false },
+    };
 
     for (const roleId of ROLE_IDS) {
+      expect(ROLE_META[roleId]).toMatchObject(expectedMeta[roleId]);
       expect(ROLE_META[roleId].nameKey).toMatch(/^Roles\./);
       expect(ROLE_META[roleId].descriptionKey).toMatch(/^Roles\./);
     }
@@ -100,19 +156,31 @@ describe("default role composition", () => {
   it("includes the 3 and 16 player boundary compositions", () => {
     expect(defaultRoleCountsFor(3)).toEqual({
       godfather: 1,
+      consigliere: 0,
       framer: 0,
       detective: 1,
       doctor: 1,
-      jester: 0,
+      bodyguard: 0,
+      roleblocker: 0,
+      vigilante: 0,
+      mayor: 0,
       villager: 0,
+      jester: 0,
+      executioner: 0,
     });
     expect(defaultRoleCountsFor(16)).toEqual({
       godfather: 1,
-      framer: 3,
+      consigliere: 1,
+      framer: 2,
       detective: 1,
       doctor: 1,
+      bodyguard: 1,
+      roleblocker: 1,
+      vigilante: 1,
+      mayor: 1,
+      villager: 4,
       jester: 1,
-      villager: 9,
+      executioner: 1,
     });
   });
 
@@ -131,6 +199,31 @@ describe("default role composition", () => {
         0,
       );
       expect(total).toBe(count);
+    }
+  });
+
+  it("splits every row into the documented mafia, town, and neutral totals", () => {
+    for (let count = MIN_PLAYERS; count <= MAX_PLAYERS; count += 1) {
+      const counts = defaultRoleCountsFor(count);
+      expect(counts).not.toBeNull();
+      if (!counts) continue;
+
+      const mafia =
+        counts.godfather + counts.consigliere + counts.framer;
+      const neutral = counts.jester + counts.executioner;
+      const town = count - mafia - neutral;
+
+      expect(mafia).toBe(Math.max(1, Math.floor(count / 4)));
+      expect(neutral).toBe(count >= 9 ? 2 : count >= 5 ? 1 : 0);
+      expect(
+        counts.detective +
+          counts.doctor +
+          counts.bodyguard +
+          counts.roleblocker +
+          counts.vigilante +
+          counts.mayor +
+          counts.villager,
+      ).toBe(town);
     }
   });
 
@@ -209,12 +302,24 @@ describe("validateConfig at room creation", () => {
     ).toBe("INVALID_CONFIG");
   });
 
-  it("limits detective, doctor, and jester to one", () => {
-    for (const roleId of ["detective", "doctor", "jester"] as const) {
+  it("allows duplicate non-Godfather roles in custom rooms", () => {
+    for (const roleId of [
+      "consigliere",
+      "framer",
+      "detective",
+      "doctor",
+      "bodyguard",
+      "roleblocker",
+      "vigilante",
+      "mayor",
+      "villager",
+      "jester",
+      "executioner",
+    ] as const) {
       const config = withRoleCounts({ [roleId]: 2 });
       expect(
-        validateConfig(config, { stage: "create", playerCount: 1 })?.code,
-      ).toBe("INVALID_CONFIG");
+        validateConfig(config, { stage: "create", playerCount: 1 }),
+      ).toBeNull();
     }
   });
 
@@ -384,11 +489,17 @@ describe("validateConfig at start", () => {
         configWith({
           roleCounts: {
             godfather: 1,
+            consigliere: 0,
             framer: 4,
             detective: 1,
             doctor: 1,
-            jester: 1,
+            bodyguard: 0,
+            roleblocker: 0,
+            vigilante: 0,
+            mayor: 0,
             villager: 9,
+            jester: 1,
+            executioner: 0,
           },
         }),
         { stage: "start", playerCount: 17 },

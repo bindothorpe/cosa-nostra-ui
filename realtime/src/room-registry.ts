@@ -53,6 +53,14 @@ export class RoomRegistry {
         connected: false,
       }));
 
+      // Snapshots written before the expanded role set are missing these keys.
+      state.config.roleCounts = {
+        ...zeroRoleCounts(),
+        ...state.config.roleCounts,
+      };
+      state.executionerTargets ??= {};
+      state.vigilanteShots ??= {};
+
       const room = this.makeRoom(state);
       this.rooms.set(room.code, room);
       room.schedule();
@@ -330,10 +338,16 @@ function normalizeName(input: string): string {
 function zeroRoleCounts(): Record<RoleId, number> {
   return {
     godfather: 0,
+    consigliere: 0,
     framer: 0,
     detective: 0,
     doctor: 0,
+    bodyguard: 0,
+    roleblocker: 0,
+    vigilante: 0,
+    mayor: 0,
     villager: 0,
     jester: 0,
+    executioner: 0,
   };
 }

@@ -142,6 +142,14 @@ export function project(
       state.phase === "night"
         ? state.nightActions[viewer.id] ?? null
         : null,
+    yourTarget: (() => {
+      if (viewer.roleId !== "executioner") return null;
+      const targetId = state.executionerTargets[viewer.id];
+      if (!targetId) return null;
+      const target = state.players.find((player) => player.id === targetId);
+      return target ? toSummary(target, viewer.id, false) : null;
+    })(),
+    yourShotsLeft: state.vigilanteShots[viewer.id] ?? 0,
     yourVote: state.votes[viewer.id] ?? null,
     voteTally:
       state.phase === "voteResult" || gameOver

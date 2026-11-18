@@ -12,11 +12,17 @@ export const MAX_PLAYERS = 16;
 
 export const ROLE_IDS = [
   "godfather",
+  "consigliere",
   "framer",
   "detective",
   "doctor",
+  "bodyguard",
+  "roleblocker",
+  "vigilante",
+  "mayor",
   "villager",
   "jester",
+  "executioner",
 ] as const satisfies readonly RoleId[];
 
 export interface RoleMeta {
@@ -32,6 +38,12 @@ export const ROLE_META: Record<RoleId, RoleMeta> = {
     activeAtNight: true,
     nameKey: "Roles.godfather.name",
     descriptionKey: "Roles.godfather.description",
+  },
+  consigliere: {
+    faction: "mafia",
+    activeAtNight: true,
+    nameKey: "Roles.consigliere.name",
+    descriptionKey: "Roles.consigliere.description",
   },
   framer: {
     faction: "mafia",
@@ -51,6 +63,30 @@ export const ROLE_META: Record<RoleId, RoleMeta> = {
     nameKey: "Roles.doctor.name",
     descriptionKey: "Roles.doctor.description",
   },
+  bodyguard: {
+    faction: "town",
+    activeAtNight: true,
+    nameKey: "Roles.bodyguard.name",
+    descriptionKey: "Roles.bodyguard.description",
+  },
+  roleblocker: {
+    faction: "town",
+    activeAtNight: true,
+    nameKey: "Roles.roleblocker.name",
+    descriptionKey: "Roles.roleblocker.description",
+  },
+  vigilante: {
+    faction: "town",
+    activeAtNight: true,
+    nameKey: "Roles.vigilante.name",
+    descriptionKey: "Roles.vigilante.description",
+  },
+  mayor: {
+    faction: "town",
+    activeAtNight: false,
+    nameKey: "Roles.mayor.name",
+    descriptionKey: "Roles.mayor.description",
+  },
   villager: {
     faction: "town",
     activeAtNight: false,
@@ -62,6 +98,12 @@ export const ROLE_META: Record<RoleId, RoleMeta> = {
     activeAtNight: false,
     nameKey: "Roles.jester.name",
     descriptionKey: "Roles.jester.description",
+  },
+  executioner: {
+    faction: "neutral",
+    activeAtNight: false,
+    nameKey: "Roles.executioner.name",
+    descriptionKey: "Roles.executioner.description",
   },
 };
 
@@ -119,29 +161,50 @@ export function defaultRoleCountsFor(
   }
 
   const mafia = Math.max(1, Math.floor(playerCount / 4));
-  const neutral = playerCount >= 5 ? 1 : 0;
+  const neutral = playerCount >= 9 ? 2 : playerCount >= 5 ? 1 : 0;
   const town = playerCount - mafia - neutral;
+
+  const consigliere = mafia >= 3 ? 1 : 0;
   const detective = town >= 1 ? 1 : 0;
   const doctor = town >= 2 ? 1 : 0;
+  const bodyguard = town >= 3 ? 1 : 0;
+  const roleblocker = town >= 4 ? 1 : 0;
+  const vigilante = town >= 6 ? 1 : 0;
+  const mayor = town >= 7 ? 1 : 0;
+  const jester = neutral >= 1 ? 1 : 0;
+  const executioner = neutral >= 2 ? 1 : 0;
 
   return {
     godfather: 1,
-    framer: mafia - 1,
+    consigliere,
+    framer: mafia - 1 - consigliere,
     detective,
     doctor,
-    jester: neutral,
-    villager: town - detective - doctor,
+    bodyguard,
+    roleblocker,
+    vigilante,
+    mayor,
+    villager:
+      town - detective - doctor - bodyguard - roleblocker - vigilante - mayor,
+    jester,
+    executioner,
   };
 }
 
 export function createDefaultRoleCounts(): Record<RoleId, number> {
   return defaultRoleCountsFor(MIN_PLAYERS) ?? {
     godfather: 1,
+    consigliere: 0,
     framer: 0,
     detective: 1,
     doctor: 1,
-    jester: 0,
+    bodyguard: 0,
+    roleblocker: 0,
+    vigilante: 0,
+    mayor: 0,
     villager: 0,
+    jester: 0,
+    executioner: 0,
   };
 }
 
@@ -161,11 +224,17 @@ export function cloneRoleCounts(
 ): Record<RoleId, number> {
   return {
     godfather: roleCounts.godfather,
+    consigliere: roleCounts.consigliere,
     framer: roleCounts.framer,
     detective: roleCounts.detective,
     doctor: roleCounts.doctor,
+    bodyguard: roleCounts.bodyguard,
+    roleblocker: roleCounts.roleblocker,
+    vigilante: roleCounts.vigilante,
+    mayor: roleCounts.mayor,
     villager: roleCounts.villager,
     jester: roleCounts.jester,
+    executioner: roleCounts.executioner,
   };
 }
 
@@ -248,37 +317,31 @@ export function validateConfig(
     }
   }
 
-  const mafia = config.roleCounts.godfather + config.roleCounts.framer;
+  const mafia =
+    config.roleCounts.godfather +
+    config.roleCounts.consigliere +
+    config.roleCounts.framer;
   if (mafia < 1) {
     return configError("INVALID_CONFIG", "Errors.invalidConfig", {
       reason: "noMafia",
     });
   }
+  // Every role except the Godfather may appear more than once in a custom
+  // room. The wizard decides how many copies are used.
   if (config.roleCounts.godfather !== 1) {
     return configError("INVALID_CONFIG", "Errors.invalidConfig", {
       reason: "godfatherCount",
-    });
-  }
-  if (config.roleCounts.detective > 1) {
-    return configError("INVALID_CONFIG", "Errors.invalidConfig", {
-      reason: "detectiveCount",
-    });
-  }
-  if (config.roleCounts.doctor > 1) {
-    return configError("INVALID_CONFIG", "Errors.invalidConfig", {
-      reason: "doctorCount",
-    });
-  }
-  if (config.roleCounts.jester > 1) {
-    return configError("INVALID_CONFIG", "Errors.invalidConfig", {
-      reason: "jesterCount",
     });
   }
 
   const town =
     config.roleCounts.villager +
     config.roleCounts.detective +
-    config.roleCounts.doctor;
+    config.roleCounts.doctor +
+    config.roleCounts.bodyguard +
+    config.roleCounts.roleblocker +
+    config.roleCounts.vigilante +
+    config.roleCounts.mayor;
   if (town < 1) {
     return configError("INVALID_CONFIG", "Errors.invalidConfig", {
       reason: "noTown",

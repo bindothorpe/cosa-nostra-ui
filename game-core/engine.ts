@@ -9,7 +9,11 @@ import {
   validateConfig,
 } from "./config";
 import { createRng, pickRandom, shuffle } from "./random";
-import { allowedActionKinds, canFramerKill } from "./roles";
+import {
+  allowedActionKinds,
+  canConsigliereKill,
+  canFramerKill,
+} from "./roles";
 import type {
   Command,
   EliminationCause,
@@ -270,6 +274,36 @@ function assignRoles(state: RoomState): EngineError | null {
     delete player.eliminatedAt;
   });
 
+  state.executionerTargets = {};
+  state.vigilanteShots = {};
+
+  for (const player of state.players) {
+    if (player.roleId === "vigilante") {
+      state.vigilanteShots[player.id] = 1;
+    }
+  }
+
+  for (const executioner of state.players) {
+    if (executioner.roleId !== "executioner") {
+      continue;
+    }
+
+    const preferred = state.players.filter(
+      (player) =>
+        player.alive &&
+        player.roleId !== "executioner" &&
+        player.faction !== "mafia",
+    );
+    const candidates =
+      preferred.length > 0
+        ? preferred
+        : state.players.filter((player) => player.roleId !== "executioner");
+    const target = pickRandom(rng, candidates);
+    if (target) {
+      state.executionerTargets[executioner.id] = target.id;
+    }
+  }
+
   state.seed = rng.state >>> 0;
   return null;
 }
@@ -283,6 +317,23 @@ function detectWinner(
     const jester = eliminatedPlayers.find((player) => player.roleId === "jester");
     if (jester) {
       return { faction: "neutral", playerId: jester.id, reason: "jester" };
+    }
+
+    const executioner = state.players.find((player) => {
+      if (!player.alive || player.roleId !== "executioner") {
+        return false;
+      }
+      const targetId = state.executionerTargets[player.id];
+      return eliminatedPlayers.some(
+        (eliminated) => eliminated.id === targetId,
+      );
+    });
+    if (executioner) {
+      return {
+        faction: "neutral",
+        playerId: executioner.id,
+        reason: "executioner",
+      };
     }
   }
 
@@ -307,7 +358,7 @@ function announceWinner(state: RoomState, now: number): void {
 
   const detailKey =
     state.winner.faction === "neutral"
-      ? "Alerts.win.jester"
+      ? `Alerts.win.${state.winner.reason}`
       : `Alerts.win.${state.winner.faction}`;
   const params =
     state.winner.faction === "neutral"
@@ -358,6 +409,9 @@ function authorisedKillActor(state: RoomState, actor: ServerPlayer): boolean {
   if (actor.roleId === "framer") {
     return canFramerKill(state.players, actor.id);
   }
+  if (actor.roleId === "consigliere") {
+    return canConsigliereKill(state.players, actor.id);
+  }
   return false;
 }
 
@@ -400,47 +454,129 @@ function resolveNight(state: RoomState, now: number): NightResult {
     }
   }
 
+  const blockedIds = new Set<PlayerId>();
+  for (const entry of submitted) {
+    if (entry.action.kind === "roleblock") {
+      blockedIds.add(entry.action.targetId);
+    }
+  }
+
+  // Roleblock actions themselves are never blocked.
+  const active = submitted.filter(
+    (entry) =>
+      entry.action.kind === "roleblock" || !blockedIds.has(entry.actor.id),
+  );
+
+  for (const entry of submitted) {
+    if (
+      entry.action.kind !== "roleblock" &&
+      blockedIds.has(entry.actor.id)
+    ) {
+      addAlert(
+        state,
+        entry.actor.id,
+        {
+          kind: "blocked",
+          round: state.round,
+          titleKey: "Alerts.blocked.title",
+          detailKey: "Alerts.blocked.body",
+        },
+        now,
+      );
+    }
+  }
+
   const kill = latestSubmitted(
-    submitted.filter(
+    active.filter(
       (entry) => entry.action.kind === "kill" && authorisedKillActor(state, entry.actor),
     ),
   );
-  const protect = latestSubmitted(
-    submitted.filter((entry) => entry.action.kind === "protect"),
+  const protects = active.filter((entry) => entry.action.kind === "protect");
+  const guards = active.filter(
+    (entry) =>
+      entry.action.kind === "guard" && entry.actor.roleId === "bodyguard",
   );
-  const frames = submitted.filter((entry) => entry.action.kind === "frame");
-  const investigations = submitted.filter(
+  const guardByTarget = new Map<PlayerId, SubmittedAction>();
+  for (const entry of guards) {
+    const existing = guardByTarget.get(entry.action.targetId);
+    guardByTarget.set(
+      entry.action.targetId,
+      existing ? latestSubmitted([existing, entry]) ?? entry : entry,
+    );
+  }
+  const frames = active.filter((entry) => entry.action.kind === "frame");
+  const investigations = active.filter(
     (entry) => entry.action.kind === "investigate",
   );
+  const shoots = active.filter(
+    (entry) =>
+      entry.action.kind === "shoot" && entry.actor.roleId === "vigilante",
+  );
 
-  const killTarget = kill
-    ? state.players.find(
-        (player) => player.id === kill.action.targetId && player.alive,
-      )
-    : undefined;
-  const protectedTargetId = protect?.action.targetId;
+  const findAliveTarget = (
+    playerId: PlayerId | undefined,
+  ): ServerPlayer | undefined =>
+    playerId
+      ? state.players.find(
+          (player) => player.id === playerId && player.alive,
+        )
+      : undefined;
 
-  const deaths: PlayerId[] = [];
-  const saved: PlayerId[] = [];
+  const killTarget = kill ? findAliveTarget(kill.action.targetId) : undefined;
+  const protectedTargetIds = new Set(
+    protects.map((entry) => entry.action.targetId),
+  );
 
-  if (killTarget) {
-    if (killTarget.id === protectedTargetId) {
-      saved.push(killTarget.id);
-    } else {
-      deaths.push(killTarget.id);
+  const deaths = new Set<PlayerId>();
+  const saved = new Set<PlayerId>();
+  const triggeredGuards = new Set<SubmittedAction>();
+
+  const resolveKillAttempt = (target: ServerPlayer | undefined): void => {
+    if (!target) {
+      return;
     }
+    if (protectedTargetIds.has(target.id)) {
+      saved.add(target.id);
+      return;
+    }
+    const guard = guardByTarget.get(target.id);
+    if (guard) {
+      saved.add(target.id);
+      deaths.add(guard.actor.id);
+      triggeredGuards.add(guard);
+      return;
+    }
+    deaths.add(target.id);
+  };
+
+  resolveKillAttempt(killTarget);
+
+  const resolvedShots: Array<{ entry: SubmittedAction; target: ServerPlayer }> = [];
+  for (const entry of shoots) {
+    const target = findAliveTarget(entry.action.targetId);
+    if (!target) {
+      continue;
+    }
+    resolvedShots.push({ entry, target });
+    resolveKillAttempt(target);
   }
 
   const framedTargets = new Set(
     frames.map((entry) => entry.action.targetId),
   );
   const investigationResults: NightResult["investigations"] = {};
+  const exactInvestigations: NightResult["exactInvestigations"] = {};
 
   for (const entry of investigations) {
     const target = state.players.find(
       (player) => player.id === entry.action.targetId,
     );
-    if (target) {
+    if (!target) {
+      continue;
+    }
+    if (entry.actor.roleId === "consigliere") {
+      exactInvestigations[entry.actor.id] = target.roleId;
+    } else {
       investigationResults[entry.actor.id] = investigationResult(
         target,
         framedTargets,
@@ -448,41 +584,55 @@ function resolveNight(state: RoomState, now: number): NightResult {
     }
   }
 
+  const deathIds = [...deaths];
+  const savedIds = [...saved];
+
   const result: NightResult = {
-    deaths,
-    saved,
+    deaths: deathIds,
+    saved: savedIds,
     investigations: investigationResults,
+    exactInvestigations,
   };
   state.pendingNightResult = result;
 
   const eliminatedPlayers: ServerPlayer[] = [];
-  for (const playerId of deaths) {
+  for (const playerId of deathIds) {
     const eliminated = eliminatePlayer(state, playerId, "night");
     if (eliminated) {
       eliminatedPlayers.push(eliminated);
     }
   }
 
-  const deathDetailKey =
-    deaths.length > 0 ? "Alerts.killed.body" : "Alerts.killed.noDeaths";
-  const deathParams =
-    deaths.length > 0
-      ? { player: playerName(state, deaths[0]) }
-      : undefined;
+  if (deathIds.length > 0) {
+    for (const playerId of deathIds) {
+      addAlertToAllPlayers(
+        state,
+        {
+          kind: "kill",
+          round: state.round,
+          titleKey: "Alerts.killed.title",
+          detailKey: "Alerts.killed.body",
+          params: { player: playerName(state, playerId) },
+        },
+        now,
+      );
+    }
+  } else {
+    addAlertToAllPlayers(
+      state,
+      {
+        kind: "kill",
+        round: state.round,
+        titleKey: "Alerts.killed.title",
+        detailKey: "Alerts.killed.noDeaths",
+      },
+      now,
+    );
+  }
 
-  addAlertToAllPlayers(
-    state,
-    {
-      kind: "kill",
-      round: state.round,
-      titleKey: "Alerts.killed.title",
-      detailKey: deathDetailKey,
-      params: deathParams,
-    },
-    now,
-  );
+  for (const protect of protects) {
+    if (!saved.has(protect.action.targetId)) continue;
 
-  if (protect && saved.length > 0) {
     addAlert(
       state,
       protect.actor.id,
@@ -491,7 +641,33 @@ function resolveNight(state: RoomState, now: number): NightResult {
         round: state.round,
         titleKey: "Alerts.saved.title",
         detailKey: "Alerts.saved.body",
-        params: { player: playerName(state, saved[0]) },
+        params: { player: playerName(state, protect.action.targetId) },
+      },
+      now,
+    );
+  }
+
+  for (const guard of triggeredGuards) {
+    addAlert(
+      state,
+      guard.actor.id,
+      {
+        kind: "saved",
+        round: state.round,
+        titleKey: "Alerts.bodyguard.title",
+        detailKey: "Alerts.bodyguard.body",
+        params: { player: playerName(state, guard.action.targetId) },
+      },
+      now,
+    );
+    addAlert(
+      state,
+      guard.action.targetId,
+      {
+        kind: "saved",
+        round: state.round,
+        titleKey: "Alerts.guarded.title",
+        detailKey: "Alerts.guarded.body",
       },
       now,
     );
@@ -502,6 +678,21 @@ function resolveNight(state: RoomState, now: number): NightResult {
       (player) => player.id === entry.action.targetId,
     );
     if (!target) {
+      continue;
+    }
+    if (entry.actor.roleId === "consigliere") {
+      addAlert(
+        state,
+        entry.actor.id,
+        {
+          kind: "investigation",
+          round: state.round,
+          titleKey: "Alerts.consigliere.title",
+          detailKey: "Alerts.consigliere.body",
+          params: { player: target.name, roleId: target.roleId },
+        },
+        now,
+      );
       continue;
     }
     const outcome = investigationResult(target, framedTargets);
@@ -523,6 +714,8 @@ function resolveNight(state: RoomState, now: number): NightResult {
   }
 
   if (kill) {
+    const killSucceeded =
+      killTarget !== undefined && deaths.has(killTarget.id);
     for (const player of state.players) {
       if (player.faction !== "mafia") {
         continue;
@@ -534,8 +727,9 @@ function resolveNight(state: RoomState, now: number): NightResult {
           kind: "kill",
           round: state.round,
           titleKey: "Alerts.kill.title",
-          detailKey:
-            deaths.length > 0 ? "Alerts.kill.success" : "Alerts.kill.saved",
+          detailKey: killSucceeded
+            ? "Alerts.kill.success"
+            : "Alerts.kill.saved",
           params: {
             player: killTarget ? killTarget.name : playerName(state, kill.action.targetId),
           },
@@ -543,6 +737,23 @@ function resolveNight(state: RoomState, now: number): NightResult {
         now,
       );
     }
+  }
+
+  for (const { entry, target } of resolvedShots) {
+    addAlert(
+      state,
+      entry.actor.id,
+      {
+        kind: "kill",
+        round: state.round,
+        titleKey: "Alerts.vigilante.title",
+        detailKey: deaths.has(target.id)
+          ? "Alerts.vigilante.success"
+          : "Alerts.vigilante.saved",
+        params: { player: target.name },
+      },
+      now,
+    );
   }
 
   state.winner = detectWinner(state, "night", eliminatedPlayers);
@@ -583,7 +794,8 @@ function resolveVoting(state: RoomState, now: number): boolean {
     if (!targetId) {
       continue;
     }
-    tally[targetId] = (tally[targetId] ?? 0) + 1;
+    const weight = player.roleId === "mayor" ? 2 : 1;
+    tally[targetId] = (tally[targetId] ?? 0) + weight;
   }
   state.voteTally = tally;
 
@@ -694,6 +906,15 @@ function removePlayerInPlace(state: RoomState, playerId: PlayerId): boolean {
   delete state.votes[playerId];
   delete state.whispersSentThisDay[playerId];
   delete state.alertsByPlayer[playerId];
+  delete state.executionerTargets[playerId];
+  delete state.vigilanteShots[playerId];
+  for (const [executionerId, targetId] of Object.entries(
+    state.executionerTargets,
+  )) {
+    if (targetId === playerId) {
+      delete state.executionerTargets[executionerId];
+    }
+  }
   state.whispers = state.whispers.filter(
     (thread) => !thread.participantIds.includes(playerId),
   );
@@ -762,6 +983,8 @@ export function createRoomState(input: CreateRoomStateInput): RoomState {
     graveyard: [],
     alertsByPlayer: { [input.hostId]: [] },
     pendingNightResult: null,
+    executionerTargets: {},
+    vigilanteShots: {},
   };
 }
 
@@ -932,6 +1155,13 @@ function handleUnsetReady(
   state.readyIds = state.readyIds.filter((id) => id !== player.id);
 
   if (state.phase === "night") {
+    const action = state.nightActions[player.id];
+    if (action?.kind === "shoot" && player.roleId === "vigilante") {
+      state.vigilanteShots[player.id] = Math.min(
+        1,
+        (state.vigilanteShots[player.id] ?? 0) + 1,
+      );
+    }
     delete state.nightActions[player.id];
   }
   if (state.phase === "voting") {
@@ -1003,6 +1233,8 @@ function handleStartGame(
   state.whispersSentThisDay = zeroWhisperBudget(state.players);
   state.graveyard = [];
   state.pendingNightResult = null;
+  state.executionerTargets = {};
+  state.vigilanteShots = {};
   state.alertsByPlayer = Object.fromEntries(
     state.players.map((player) => [player.id, []] as const),
   );
@@ -1033,16 +1265,30 @@ function handleSubmitNightAction(
     return engineError("NOT_ALIVE", "Errors.notAlive");
   }
 
-  const framerCanKill =
-    player.roleId === "framer" &&
-    canFramerKill(state.players, player.id);
-  const allowed = allowedActionKinds(player.roleId, framerCanKill);
+  const canFallbackKill =
+    (player.roleId === "framer" &&
+      canFramerKill(state.players, player.id)) ||
+    (player.roleId === "consigliere" &&
+      canConsigliereKill(state.players, player.id));
+  const allowed = allowedActionKinds(player.roleId, canFallbackKill);
 
   if (!allowed.includes(command.kind)) {
     if (player.faction === "mafia" && command.kind === "kill") {
       return engineError("NOT_AUTHORISED", "Errors.notAuthorised");
     }
     return engineError("NOT_YOUR_TURN", "Errors.notYourTurn");
+  }
+
+  const previousAction = state.nightActions[player.id];
+  const isRetargetingShot =
+    command.kind === "shoot" && previousAction?.kind === "shoot";
+
+  if (
+    command.kind === "shoot" &&
+    !isRetargetingShot &&
+    (state.vigilanteShots[player.id] ?? 0) <= 0
+  ) {
+    return engineError("BUDGET_EXHAUSTED", "Errors.noShotsLeft");
   }
 
   const target = state.players.find(
@@ -1057,6 +1303,13 @@ function handleSubmitNightAction(
     targetId: target.id,
     submittedAt: now,
   };
+
+  if (command.kind === "shoot" && !isRetargetingShot) {
+    state.vigilanteShots[player.id] = Math.max(
+      0,
+      (state.vigilanteShots[player.id] ?? 0) - 1,
+    );
+  }
 
   if (!state.readyIds.includes(player.id)) {
     state.readyIds.push(player.id);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ROOM_CONFIG,
+  ROLE_IDS,
   advancePhase,
   cloneRoomConfig,
   defaultRoleCountsFor,
@@ -43,14 +44,7 @@ describe("starting the game", () => {
     expect(state.eliminatedIds).toEqual([]);
 
     const counts = defaultRoleCountsFor(8);
-    for (const roleId of [
-      "godfather",
-      "framer",
-      "detective",
-      "doctor",
-      "villager",
-      "jester",
-    ] as const) {
+    for (const roleId of ROLE_IDS) {
       const expected = counts?.[roleId] ?? 0;
       expect(
         state.players.filter((player) => player.roleId === roleId),
@@ -94,9 +88,11 @@ describe("starting the game", () => {
 function roleIdFaction(roleId: string): string {
   switch (roleId) {
     case "godfather":
+    case "consigliere":
     case "framer":
       return "mafia";
     case "jester":
+    case "executioner":
       return "neutral";
     default:
       return "town";
@@ -120,6 +116,7 @@ describe("phase progression", () => {
       deaths: [],
       saved: [],
       investigations: {},
+      exactInvestigations: {},
     });
     expect(state.round).toBe(1);
     expect(state.phaseEndsAt).toBe(

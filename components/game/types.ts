@@ -2,11 +2,17 @@ export type Faction = "mafia" | "town" | "neutral";
 
 export type RoleId =
   | "godfather"
+  | "consigliere"
   | "framer"
   | "detective"
   | "doctor"
+  | "bodyguard"
+  | "roleblocker"
+  | "vigilante"
+  | "mayor"
   | "villager"
-  | "jester";
+  | "jester"
+  | "executioner";
 
 export type Phase =
   | "lobby"
@@ -119,6 +125,10 @@ export interface GameState {
   alerts: GameAlert[];
   graveyard: GraveyardMessage[];
   graveyardUnread: number;
+  /** Executioner's assigned target, when the player has one. */
+  targetName?: string;
+  /** Vigilante's remaining shots. */
+  shotsLeft?: number;
   /** Live mode only: whether the host may start the game right now. */
   canStart?: boolean;
 }

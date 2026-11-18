@@ -131,6 +131,21 @@ export function RoleCard({
             {roleT(`${player.roleId}.win`)}
           </p>
         </div>
+        {state.targetName ? (
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {t("target")}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed">{state.targetName}</p>
+          </div>
+        ) : null}
+        {player.roleId === "vigilante" && state.shotsLeft !== undefined ? (
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {t("shots", { count: state.shotsLeft })}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {player.faction === "mafia" && crew.length > 0 ? (

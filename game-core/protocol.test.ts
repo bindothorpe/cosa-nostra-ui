@@ -39,6 +39,9 @@ describe("client frame parsing", () => {
       { type: "submitNightAction", kind: "frame", targetId: "p2" },
       { type: "submitNightAction", kind: "investigate", targetId: "p2" },
       { type: "submitNightAction", kind: "protect", targetId: "p2" },
+      { type: "submitNightAction", kind: "guard", targetId: "p2" },
+      { type: "submitNightAction", kind: "roleblock", targetId: "p2" },
+      { type: "submitNightAction", kind: "shoot", targetId: "p2" },
       { type: "castVote", targetId: "p2" },
       { type: "sendWhisper", toPlayerId: "p2", text: "hello" },
       { type: "sendGraveyardMessage", text: "hello" },
@@ -116,6 +119,38 @@ describe("config schema", () => {
     expect(roomConfigSchema.parse(cloneRoomConfig(DEFAULT_ROOM_CONFIG))).toEqual(
       cloneRoomConfig(DEFAULT_ROOM_CONFIG),
     );
+  });
+
+  it("requires all twelve role-count keys", () => {
+    const missingOne = { ...DEFAULT_ROOM_CONFIG.roleCounts };
+    delete (missingOne as Partial<typeof missingOne>).executioner;
+
+    expect(() =>
+      roomConfigSchema.parse({
+        ...cloneRoomConfig(DEFAULT_ROOM_CONFIG),
+        roleCounts: missingOne,
+      }),
+    ).toThrow();
+  });
+
+  it("accepts every documented night action kind", () => {
+    for (const kind of [
+      "kill",
+      "frame",
+      "investigate",
+      "protect",
+      "guard",
+      "roleblock",
+      "shoot",
+    ] as const) {
+      expect(
+        parseClientFrame({
+          type: "command",
+          id: `cmd-${kind}`,
+          command: { type: "submitNightAction", kind, targetId: "p2" },
+        }),
+      ).toMatchObject({ type: "command", command: { kind } });
+    }
   });
 
   it("rejects negative role counts and unknown keys", () => {

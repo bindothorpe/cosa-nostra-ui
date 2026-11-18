@@ -4,11 +4,17 @@ export type RoomCode = string;
 
 export type RoleId =
   | "godfather"
+  | "consigliere"
   | "framer"
   | "detective"
   | "doctor"
+  | "bodyguard"
+  | "roleblocker"
+  | "vigilante"
+  | "mayor"
   | "villager"
-  | "jester";
+  | "jester"
+  | "executioner";
 
 export type Faction = "mafia" | "town" | "neutral";
 
@@ -24,7 +30,14 @@ export type Phase =
 
 export type ConfigurablePhase = Exclude<Phase, "lobby" | "gameOver">;
 
-export type NightActionKind = "kill" | "frame" | "investigate" | "protect";
+export type NightActionKind =
+  | "kill"
+  | "frame"
+  | "investigate"
+  | "protect"
+  | "guard"
+  | "roleblock"
+  | "shoot";
 
 export type TieRule = "no-elimination" | "random" | "revote";
 
@@ -33,6 +46,7 @@ export type EliminationCause = "night" | "vote";
 export type AlertKind =
   | "kill"
   | "saved"
+  | "blocked"
   | "investigation"
   | "vote"
   | "system"
@@ -103,12 +117,18 @@ export interface NightResult {
   deaths: PlayerId[];
   saved: PlayerId[];
   investigations: Record<PlayerId, "mafia" | "not-mafia">;
+  /** Exact role seen by the Consigliere, keyed by investigating player. */
+  exactInvestigations: Record<PlayerId, RoleId>;
 }
 
 export type Winner =
   | { faction: "mafia" }
   | { faction: "town" }
-  | { faction: "neutral"; playerId: PlayerId; reason: "jester" };
+  | {
+      faction: "neutral";
+      playerId: PlayerId;
+      reason: "jester" | "executioner";
+    };
 
 export interface NightReportView {
   deaths: PlayerId[];
@@ -140,6 +160,10 @@ export interface RoomState {
   graveyard: GraveyardMessage[];
   alertsByPlayer: Record<PlayerId, GameAlert[]>;
   pendingNightResult: NightResult | null;
+  /** Executioner player id -> assigned target id. */
+  executionerTargets: Record<PlayerId, PlayerId>;
+  /** Vigilante player id -> remaining shots. */
+  vigilanteShots: Record<PlayerId, number>;
 }
 
 export interface PlayerSummary {
@@ -195,6 +219,10 @@ export interface PlayerView {
   yourRole: RoleId;
   yourFaction: Faction;
   yourAction: NightAction | null;
+  /** Executioner's assigned target; null for every other role. */
+  yourTarget: PlayerSummary | null;
+  /** Remaining vigilante shots; 0 for every other role. */
+  yourShotsLeft: number;
   mafiaKill?: MafiaKillView | null;
   yourVote: PlayerId | null;
   voteTally: Record<PlayerId, number> | null;

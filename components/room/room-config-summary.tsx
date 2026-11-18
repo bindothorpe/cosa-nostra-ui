@@ -4,12 +4,14 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FactionBadge } from "@/components/game/faction-badge";
+import { ROLES } from "@/components/game/data";
 import {
   FACTION_KEYS,
   formatPhaseDuration,
   PHASE_KEYS,
 } from "@/components/game/room-config";
-import type { RoomConfig } from "@/components/game/types";
+import type { RoleId, RoomConfig } from "@/components/game/types";
+import { cn } from "@/lib/utils";
 
 export function RoomConfigSummary({
   config,
@@ -19,6 +21,7 @@ export function RoomConfigSummary({
   className?: string;
 }) {
   const t = useTranslations("RoomConfig");
+  const rolesT = useTranslations("Roles");
 
   return (
     <div className={className}>
@@ -53,6 +56,35 @@ export function RoomConfigSummary({
         <Badge variant="outline" className="h-5 text-[10px]">
           {t("timers")}: {t(config.timerPreset)}
         </Badge>
+      </div>
+
+      <div className="mt-3">
+        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          {t("roles")}
+        </p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {(Object.entries(config.roleCounts) as Array<[RoleId, number]>)
+            .filter(([, count]) => count > 0)
+            .map(([roleId, count]) => (
+              <Badge
+                key={roleId}
+                variant="secondary"
+                className="h-6 gap-1 px-2 text-[11px] font-normal"
+              >
+                <span className="font-mono font-semibold">{count}×</span>
+                {rolesT(`${roleId}.name`)}
+                <span
+                  className={cn(
+                    "ml-0.5 size-1.5 rounded-full",
+                    ROLES[roleId].faction === "mafia" && "bg-faction-mafia",
+                    ROLES[roleId].faction === "town" && "bg-faction-town",
+                    ROLES[roleId].faction === "neutral" &&
+                      "bg-faction-neutral",
+                  )}
+                />
+              </Badge>
+            ))}
+        </div>
       </div>
 
       <Separator className="my-3" />

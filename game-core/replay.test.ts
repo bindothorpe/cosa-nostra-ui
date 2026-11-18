@@ -82,14 +82,17 @@ function buildFullGame(): {
   const framer = playerWithRole(state, "framer");
   const detective = playerWithRole(state, "detective");
   const doctor = playerWithRole(state, "doctor");
+  // Any living town player works as the protected victim, as long as it is
+  // neither the doctor (self-protection is rejected) nor a whisper participant.
   const victim = state.players.find(
     (player) =>
-      player.roleId === "villager" &&
+      player.faction === "town" &&
+      player.roleId !== "doctor" &&
       player.id !== "p1" &&
       player.id !== "p2",
   );
   if (!victim) {
-    throw new Error("Expected an eligible villager victim");
+    throw new Error("Expected an eligible town victim");
   }
 
   readyLiving();

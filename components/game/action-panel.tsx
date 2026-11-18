@@ -405,6 +405,11 @@ export function ActionPanel() {
           {isReady ? <Check className="size-4" /> : null}
           {t("confirm")}
         </Button>
+        {you.roleId === "vigilante" ? (
+          <p className="text-center text-xs text-muted-foreground">
+            {t("shotsLeft", { count: state.shotsLeft ?? 0 })}
+          </p>
+        ) : null}
         <ReadyStatus show={isReady} waitingCount={waitingCount} />
       </div>
 

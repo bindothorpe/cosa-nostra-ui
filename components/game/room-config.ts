@@ -36,7 +36,7 @@ export type FactionError = "sum" | "mafia" | "town" | "neutral";
 
 export function defaultFactionCounts(playerCount: number): FactionCounts {
   const mafia = Math.max(1, Math.floor(playerCount / 4));
-  const neutral = playerCount >= 5 ? 1 : 0;
+  const neutral = playerCount >= 9 ? 2 : playerCount >= 5 ? 1 : 0;
   const town = Math.max(1, playerCount - mafia - neutral);
 
   return { mafia, town, neutral };
@@ -45,16 +45,38 @@ export function defaultFactionCounts(playerCount: number): FactionCounts {
 export function deriveRoleCounts(
   factions: FactionCounts,
 ): Record<RoleId, number> {
+  const consigliere = factions.mafia >= 3 ? 1 : 0;
   const detective = factions.town >= 1 ? 1 : 0;
   const doctor = factions.town >= 2 ? 1 : 0;
+  const bodyguard = factions.town >= 3 ? 1 : 0;
+  const roleblocker = factions.town >= 4 ? 1 : 0;
+  const vigilante = factions.town >= 6 ? 1 : 0;
+  const mayor = factions.town >= 7 ? 1 : 0;
+  const jester = factions.neutral >= 1 ? 1 : 0;
+  const executioner = factions.neutral >= 2 ? 1 : 0;
 
   return {
     godfather: factions.mafia >= 1 ? 1 : 0,
-    framer: Math.max(0, factions.mafia - 1),
+    consigliere,
+    framer: Math.max(0, factions.mafia - 1 - consigliere),
     detective,
     doctor,
-    jester: factions.neutral >= 1 ? 1 : 0,
-    villager: Math.max(0, factions.town - detective - doctor),
+    bodyguard,
+    roleblocker,
+    vigilante,
+    mayor,
+    villager: Math.max(
+      0,
+      factions.town -
+        detective -
+        doctor -
+        bodyguard -
+        roleblocker -
+        vigilante -
+        mayor,
+    ),
+    jester,
+    executioner,
   };
 }
 
@@ -70,7 +92,7 @@ export function validateFactionCounts(
 
   if (factions.mafia < 1) errors.push("mafia");
   if (factions.town < 1) errors.push("town");
-  if (factions.neutral > 1) errors.push("neutral");
+  if (factions.neutral > 2) errors.push("neutral");
   if (factionTotal(factions) !== playerCount) errors.push("sum");
 
   return errors;
@@ -91,12 +113,14 @@ export function buildRoomConfig({
   playerCount,
   factionPreset,
   factionCounts,
+  roleCounts,
   timerPreset,
   phaseDurations,
 }: {
   playerCount: number;
   factionPreset: RoomConfig["factionPreset"];
   factionCounts: FactionCounts;
+  roleCounts?: Record<RoleId, number>;
   timerPreset: RoomConfig["timerPreset"];
   phaseDurations: PhaseDurations;
 }): RoomConfig {
@@ -109,7 +133,9 @@ export function buildRoomConfig({
     playerCount,
     factionPreset,
     factionCounts: { ...resolvedFactions },
-    roleCounts: deriveRoleCounts(resolvedFactions),
+    roleCounts: roleCounts
+      ? { ...roleCounts }
+      : deriveRoleCounts(resolvedFactions),
     timerPreset,
     phaseDurations:
       timerPreset === "default"

@@ -43,11 +43,17 @@ const THREE_PLAYER_CONFIG = {
   maxPlayers: 3,
   roleCounts: {
     godfather: 1,
+    consigliere: 0,
     framer: 0,
     detective: 1,
     doctor: 1,
-    jester: 0,
+    bodyguard: 0,
+    roleblocker: 0,
+    vigilante: 0,
+    mayor: 0,
     villager: 0,
+    jester: 0,
+    executioner: 0,
   },
 };
 
@@ -250,9 +256,11 @@ describe("realtime server", () => {
         if (summary.roleId !== null) {
           expect(viewerIsMafia).toBe(true);
           const summaryRole = roles.get(summary.id);
-          expect(summaryRole === "godfather" || summaryRole === "framer").toBe(
-            true,
-          );
+          expect(
+            summaryRole === "godfather" ||
+              summaryRole === "consigliere" ||
+              summaryRole === "framer",
+          ).toBe(true);
         }
       }
 
@@ -283,6 +291,13 @@ describe("realtime server", () => {
             targetId: target!.id,
           });
           break;
+        case "consigliere":
+          command(socket, commandId, {
+            type: "submitNightAction",
+            kind: "investigate",
+            targetId: target!.id,
+          });
+          break;
         case "framer":
           command(socket, commandId, {
             type: "submitNightAction",
@@ -304,8 +319,31 @@ describe("realtime server", () => {
             targetId: target!.id,
           });
           break;
+        case "bodyguard":
+          command(socket, commandId, {
+            type: "submitNightAction",
+            kind: "guard",
+            targetId: target!.id,
+          });
+          break;
+        case "roleblocker":
+          command(socket, commandId, {
+            type: "submitNightAction",
+            kind: "roleblock",
+            targetId: target!.id,
+          });
+          break;
+        case "vigilante":
+          command(socket, commandId, {
+            type: "submitNightAction",
+            kind: "shoot",
+            targetId: target!.id,
+          });
+          break;
+        case "mayor":
         case "villager":
         case "jester":
+        case "executioner":
           command(socket, commandId, { type: "setReady" });
           break;
       }

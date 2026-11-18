@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMessages, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, CircleAlert, LoaderCircle } from "lucide-react";
+import {
+  canDisableRole,
+  createFullRolePool,
+  requiresDuplicates,
+  resolveRoleCounts,
+  type RolePool,
+} from "@/game-core/role-selection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,17 +37,19 @@ import {
 import type {
   FactionCounts,
   PhaseDurations,
+  RoleId,
   RoomPreset,
 } from "@/components/game/types";
 import { FactionDistribution } from "@/components/room/faction-distribution";
 import { IdentityFields } from "@/components/room/identity-fields";
 import { NumberStepper } from "@/components/room/number-stepper";
 import { PhaseTimers } from "@/components/room/phase-timers";
+import { RoleSelection, type RoleTab } from "@/components/room/role-selection";
 import { RoomConfigSummary } from "@/components/room/room-config-summary";
 import { WizardProgress } from "@/components/room/wizard-progress";
 import { hasMessage } from "@/app/live/error-text";
 
-const STEP_KEYS = ["table", "timers", "identity"] as const;
+const STEP_KEYS = ["table", "roles", "timers", "identity"] as const;
 
 export default function CreateRoomPage() {
   const t = useTranslations("CreateRoom");
@@ -65,6 +74,20 @@ export default function CreateRoomPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [roleTab, setRoleTab] = useState<RoleTab>("default");
+  const [rolePool, setRolePool] = useState<RolePool>(createFullRolePool);
+  const [duplicatesPreferred, setDuplicatesPreferred] = useState(false);
+  const [roleCounts, setRoleCounts] = useState<Record<RoleId, number>>(
+    () =>
+      resolveRoleCounts({
+        seats: defaultFactionCounts(DEFAULT_PLAYER_COUNT),
+        pool: createFullRolePool(),
+        allowDuplicates: false,
+        // Deterministic first paint so SSR and hydration agree; every actual
+        // shuffle or edit uses Math.random in an event handler.
+        random: () => 0.5,
+      }).roleCounts,
+  );
 
   const factions =
     factionPreset === "default"
@@ -76,19 +99,90 @@ export default function CreateRoomPage() {
       : [];
   const timerErrors =
     timerPreset === "custom" ? invalidPhaseDurations(customTimers) : [];
+  const allowDuplicates =
+    duplicatesPreferred || requiresDuplicates(factions, rolePool);
+  const roleTotal = Object.values(roleCounts).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
   const canAdvance =
     step === 0
       ? factionErrors.length === 0
       : step === 1
-        ? timerErrors.length === 0
-        : true;
+        ? roleTotal === playerCount
+        : step === 2
+          ? timerErrors.length === 0
+          : true;
   const stepCopy = STEP_KEYS[step];
 
+  function rollRoles({
+    seats,
+    pool = rolePool,
+    duplicates = allowDuplicates,
+  }: {
+    seats: FactionCounts;
+    pool?: RolePool;
+    duplicates?: boolean;
+  }) {
+    const result = resolveRoleCounts({
+      seats,
+      pool,
+      allowDuplicates:
+        duplicates || requiresDuplicates(seats, pool),
+    });
+
+    setRoleCounts(result.roleCounts);
+  }
+
+  function changePlayerCount(next: number) {
+    setPlayerCount(next);
+    rollRoles({
+      seats:
+        factionPreset === "default"
+          ? defaultFactionCounts(next)
+          : customFactions,
+    });
+  }
+
+  function changeFactionCounts(next: FactionCounts) {
+    setCustomFactions(next);
+    rollRoles({ seats: next });
+  }
+
   function changeFactionPreset(next: RoomPreset) {
+    let nextCustom = customFactions;
     if (next === "custom" && factionTotal(customFactions) !== playerCount) {
-      setCustomFactions(defaultFactionCounts(playerCount));
+      nextCustom = defaultFactionCounts(playerCount);
+      setCustomFactions(nextCustom);
     }
     setFactionPreset(next);
+    rollRoles({
+      seats:
+        next === "default" ? defaultFactionCounts(playerCount) : nextCustom,
+    });
+  }
+
+  function toggleRole(roleId: RoleId, enabled: boolean) {
+    if (!enabled && !canDisableRole(roleId, factions, rolePool)) return;
+
+    const nextPool = { ...rolePool, [roleId]: enabled };
+    setRolePool(nextPool);
+    rollRoles({ seats: factions, pool: nextPool });
+  }
+
+  function changeAllowDuplicates(enabled: boolean) {
+    if (!enabled && requiresDuplicates(factions, rolePool)) return;
+
+    setDuplicatesPreferred(enabled);
+    rollRoles({ seats: factions, pool: rolePool, duplicates: enabled });
+  }
+
+  function shuffleRoles() {
+    rollRoles({
+      seats: factions,
+      pool: rolePool,
+      duplicates: allowDuplicates,
+    });
   }
 
   function updatePhaseDuration(
@@ -144,6 +238,7 @@ export default function CreateRoomPage() {
       playerCount,
       factionPreset,
       factionCounts: customFactions,
+      roleCounts,
       timerPreset,
       phaseDurations: customTimers,
     });
@@ -226,7 +321,7 @@ export default function CreateRoomPage() {
                     value={playerCount}
                     min={MIN_PLAYERS}
                     max={MAX_PLAYERS}
-                    onChange={setPlayerCount}
+                    onChange={changePlayerCount}
                     decreaseLabel={t("decreasePlayers")}
                     increaseLabel={t("increasePlayers")}
                     valueClassName="min-w-14 text-3xl"
@@ -249,7 +344,7 @@ export default function CreateRoomPage() {
                 onPresetChange={changeFactionPreset}
                 playerCount={playerCount}
                 counts={factions}
-                onCountsChange={setCustomFactions}
+                onCountsChange={changeFactionCounts}
                 errors={factionErrors}
               />
             </section>
@@ -257,6 +352,22 @@ export default function CreateRoomPage() {
         ) : null}
 
         {step === 1 ? (
+          <section className="mt-8">
+            <RoleSelection
+              tab={roleTab}
+              onTabChange={setRoleTab}
+              seats={factions}
+              pool={rolePool}
+              onToggle={toggleRole}
+              allowDuplicates={allowDuplicates}
+              onAllowDuplicatesChange={changeAllowDuplicates}
+              roleCounts={roleCounts}
+              onShuffle={shuffleRoles}
+            />
+          </section>
+        ) : null}
+
+        {step === 2 ? (
           <section className="mt-8 flex flex-col gap-4">
             <div className="space-y-2">
               <h2 className="font-heading text-base leading-snug font-medium">
@@ -279,7 +390,7 @@ export default function CreateRoomPage() {
           </section>
         ) : null}
 
-        {step === 2 ? (
+        {step === 3 ? (
           <div className="space-y-10">
             <Card className="border-border/80 bg-card/70 backdrop-blur">
               <CardHeader>
@@ -307,6 +418,7 @@ export default function CreateRoomPage() {
                 playerCount,
                 factionPreset,
                 factionCounts: customFactions,
+                roleCounts,
                 timerPreset,
                 phaseDurations: customTimers,
               })}

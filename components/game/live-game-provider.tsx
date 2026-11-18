@@ -80,11 +80,17 @@ const EMPTY_YOU: Player = {
 
 const ZERO_ROLE_COUNTS: Record<RoleId, number> = {
   godfather: 0,
+  consigliere: 0,
   framer: 0,
   detective: 0,
   doctor: 0,
+  bodyguard: 0,
+  roleblocker: 0,
+  vigilante: 0,
+  mayor: 0,
   villager: 0,
   jester: 0,
+  executioner: 0,
 };
 
 /** Reserved read-receipt key for the graveyard (thread ids are UUIDs). */
@@ -92,18 +98,30 @@ const GRAVEYARD_READ_KEY = "__graveyard__";
 
 const KIND_BY_ROLE: Partial<Record<RoleId, NightActionKind>> = {
   godfather: "kill",
+  consigliere: "investigate",
   framer: "frame",
   detective: "investigate",
   doctor: "protect",
+  bodyguard: "guard",
+  roleblocker: "roleblock",
+  vigilante: "shoot",
 };
 
 function factionCountsFromRoleCounts(
   roleCounts: Record<RoleId, number>,
 ): FactionCounts {
   return {
-    mafia: roleCounts.godfather + roleCounts.framer,
-    town: roleCounts.detective + roleCounts.doctor + roleCounts.villager,
-    neutral: roleCounts.jester,
+    mafia:
+      roleCounts.godfather + roleCounts.consigliere + roleCounts.framer,
+    town:
+      roleCounts.detective +
+      roleCounts.doctor +
+      roleCounts.bodyguard +
+      roleCounts.roleblocker +
+      roleCounts.vigilante +
+      roleCounts.mayor +
+      roleCounts.villager,
+    neutral: roleCounts.jester + roleCounts.executioner,
   };
 }
 
@@ -280,6 +298,8 @@ function toGameState({
     alerts,
     graveyard,
     graveyardUnread,
+    targetName: view.yourTarget?.name,
+    shotsLeft: view.yourShotsLeft,
     canStart: view.canStart,
   };
 }
@@ -415,7 +435,9 @@ export function LiveGameProvider({ children }: { children: ReactNode }) {
     }) => {
       const trimmed = name.trim();
       const serverConfig: ServerRoomConfig = {
-        rolePreset: config.factionPreset,
+        // The wizard resolves the actual role counts (randomized or custom),
+        // so the server must preserve them instead of re-deriving defaults.
+        rolePreset: "custom",
         minPlayers: config.playerCount,
         maxPlayers: config.playerCount,
         roleCounts: { ...config.roleCounts },

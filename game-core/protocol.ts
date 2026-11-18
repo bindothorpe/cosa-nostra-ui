@@ -18,11 +18,15 @@ const nightActionKindValues = [
   "frame",
   "investigate",
   "protect",
+  "guard",
+  "roleblock",
+  "shoot",
 ] as const;
 const tieRuleValues = ["no-elimination", "random", "revote"] as const;
 const alertKindValues = [
   "kill",
   "saved",
+  "blocked",
   "investigation",
   "vote",
   "system",
@@ -54,11 +58,17 @@ export const nightActionSchema = z
 export const roleCountsSchema = z
   .object({
     godfather: z.number().int().nonnegative(),
+    consigliere: z.number().int().nonnegative(),
     framer: z.number().int().nonnegative(),
     detective: z.number().int().nonnegative(),
     doctor: z.number().int().nonnegative(),
+    bodyguard: z.number().int().nonnegative(),
+    roleblocker: z.number().int().nonnegative(),
+    vigilante: z.number().int().nonnegative(),
+    mayor: z.number().int().nonnegative(),
     villager: z.number().int().nonnegative(),
     jester: z.number().int().nonnegative(),
+    executioner: z.number().int().nonnegative(),
   })
   .strict();
 
@@ -162,7 +172,7 @@ export const winnerSchema = z.discriminatedUnion("faction", [
     .object({
       faction: z.literal("neutral"),
       playerId: playerIdSchema,
-      reason: z.literal("jester"),
+      reason: z.enum(["jester", "executioner"]),
     })
     .strict(),
 ]);
@@ -266,6 +276,8 @@ export const playerViewSchema = z
     yourRole: roleIdSchema,
     yourFaction: factionSchema,
     yourAction: nightActionSchema.nullable(),
+    yourTarget: playerSummarySchema.nullable(),
+    yourShotsLeft: z.number().int().nonnegative(),
     mafiaKill: mafiaKillViewSchema.nullable().optional(),
     yourVote: playerIdSchema.nullable(),
     voteTally: z.record(z.string(), z.number()).nullable(),

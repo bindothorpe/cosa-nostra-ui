@@ -37,11 +37,17 @@ const APP_CRASH_TEXT =
 
 type RoleId =
   | "godfather"
+  | "consigliere"
   | "framer"
   | "detective"
   | "doctor"
+  | "bodyguard"
+  | "roleblocker"
+  | "vigilante"
+  | "mayor"
   | "villager"
-  | "jester";
+  | "jester"
+  | "executioner";
 
 interface Identity {
   code: string;
@@ -66,11 +72,17 @@ interface PhaseReading {
 
 const ROLE_PATTERNS: Array<{ id: RoleId; pattern: RegExp }> = [
   { id: "godfather", pattern: /godfather|peetvader|doopvader/i },
+  { id: "consigliere", pattern: /consigliere|consiglieri|raadsman|adviseur/i },
   { id: "framer", pattern: /framer|fraudeur|vervalser/i },
   { id: "detective", pattern: /detective|rechercheur|inspecteur/i },
   { id: "doctor", pattern: /\bdoctor\b|\bdokter\b|\barts\b|\bheelmeester\b/i },
+  { id: "bodyguard", pattern: /bodyguard|lijfwacht|beschermer/i },
+  { id: "roleblocker", pattern: /role\s*blocker|rolblokkeerder|blokkeerder/i },
+  { id: "vigilante", pattern: /vigilante|burgerwacht|wrekende/i },
+  { id: "mayor", pattern: /\bmayor\b|burgemeester/i },
   { id: "villager", pattern: /villager|dorpsbewoner|dorpeling|burger/i },
   { id: "jester", pattern: /jester|dwaas|grappenmaker|\bnar\b/i },
+  { id: "executioner", pattern: /executioner|beul|scherprechter/i },
 ];
 
 const JSON_HEADERS = {
@@ -153,7 +165,7 @@ test.describe("live multiplayer", () => {
         const { raw, role } = await readOwnRole(page);
         expect(
           role,
-          `live-you-role is not one of the six roles: "${raw}"`,
+          `live-you-role is not one of the twelve roles: "${raw}"`,
         ).not.toBeNull();
         if (!role) throw new Error(`unknown role text: "${raw}"`);
         ownRoles.set(page, role);
@@ -397,7 +409,10 @@ async function assertNoForeignRoles(
   const count = await roleNodes.count();
 
   if (count > 0) {
-    const mafiaViewer = ownRole === "godfather" || ownRole === "framer";
+    const mafiaViewer =
+      ownRole === "godfather" ||
+      ownRole === "consigliere" ||
+      ownRole === "framer";
     for (const text of await roleNodes.allInnerTexts()) {
       if (!text.trim()) continue;
       const role = parseRole(text);
@@ -406,7 +421,9 @@ async function assertNoForeignRoles(
       if (mafiaViewer) {
         // Mafia may legitimately see their own team's roles.
         expect(
-          role === "godfather" || role === "framer",
+          role === "godfather" ||
+            role === "consigliere" ||
+            role === "framer",
           `mafia page exposes a non-mafia role: "${text}"`,
         ).toBe(true);
       } else {

@@ -1,21 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FactionBadge } from "@/components/game/faction-badge";
 import {
-  deriveRoleCounts,
   FACTION_KEYS,
   factionTotal,
   type FactionError,
 } from "@/components/game/room-config";
-import { ROLES } from "@/components/game/data";
-import type {
-  FactionCounts,
-  RoomPreset,
-  RoleId,
-} from "@/components/game/types";
+import type { FactionCounts, RoomPreset } from "@/components/game/types";
 import { cn } from "@/lib/utils";
 import { NumberStepper } from "./number-stepper";
 
@@ -36,8 +29,6 @@ export function FactionDistribution({
 }) {
   const t = useTranslations("CreateRoom");
   const factionT = useTranslations("Faction");
-  const rolesT = useTranslations("Roles");
-  const roleCounts = deriveRoleCounts(counts);
   const total = factionTotal(counts);
 
   function updateFaction(faction: keyof FactionCounts, next: number) {
@@ -88,7 +79,7 @@ export function FactionDistribution({
               <NumberStepper
                 value={counts[faction]}
                 min={0}
-                max={faction === "neutral" ? 1 : playerCount}
+                max={faction === "neutral" ? 2 : playerCount}
                 onChange={(value) => updateFaction(faction, value)}
                 decreaseLabel={t("decreaseFaction", {
                   faction: factionT(faction),
@@ -115,33 +106,9 @@ export function FactionDistribution({
         </div>
       )}
 
-      <div className="rounded-xl border bg-muted/20 p-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          {t("rolesPreview")}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {(Object.entries(roleCounts) as Array<[RoleId, number]>)
-            .filter(([, count]) => count > 0)
-            .map(([roleId, count]) => (
-              <Badge
-                key={roleId}
-                variant="secondary"
-                className="h-6 gap-1 px-2 text-[11px] font-normal"
-              >
-                <span className="font-mono font-semibold">{count}×</span>
-                {rolesT(`${roleId}.name`)}
-                <span
-                  className={cn(
-                    "ml-0.5 size-1.5 rounded-full",
-                    ROLES[roleId].faction === "mafia" && "bg-faction-mafia",
-                    ROLES[roleId].faction === "town" && "bg-faction-town",
-                    ROLES[roleId].faction === "neutral" && "bg-faction-neutral",
-                  )}
-                />
-              </Badge>
-            ))}
-        </div>
-      </div>
+      <p className="rounded-xl border border-dashed px-3 py-3 text-xs leading-relaxed text-muted-foreground">
+        {t("rolesMovedHint")}
+      </p>
 
       {errors.length > 0 ? (
         <ul className="space-y-1 text-xs text-destructive">
