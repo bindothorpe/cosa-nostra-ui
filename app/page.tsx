@@ -15,6 +15,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { LocaleSwitcher } from "@/components/game/locale-switcher";
+import { CodexDrawerButton } from "@/components/game/codex-drawer-button";
 import { BugReportFab } from "@/components/bugs/bug-report-fab";
 import { ApiError, checkRoom } from "@/components/room/api";
 import {
@@ -240,7 +241,8 @@ function LandingContent() {
         className="noir-atmosphere pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem]"
       />
 
-      <header className="flex justify-end">
+      <header className="flex items-center justify-end gap-1.5">
+        <CodexDrawerButton />
         <LocaleSwitcher />
       </header>
 
